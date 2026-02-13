@@ -3,28 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mahjong Pyramid Inventory Neon Pro</title>
+<title>Mahjong Pyramid Inventory Pro</title>
 <style>
-body { margin:0; font-family: Arial,sans-serif; background:#0b0c10; color:#fff; display:flex; flex-direction:column; align-items:center; }
+body { margin:0; font-family: Arial,sans-serif; background:url('assets/images/mahjong_bg.jpg') no-repeat center center fixed; background-size:cover; color:#fff; display:flex; flex-direction:column; align-items:center; }
 #menu, #game { width:95vw; max-width:1200px; text-align:center; }
 #menu button { margin:10px; padding:1em 2em; font-size:1.2em; border:none; border-radius:8px; background:#222; color:#fff; cursor:pointer; transition:0.3s; }
 #menu button:hover { background:#00f0ff; color:#000; }
-.board { position:relative; margin-top:20px; width:95vw; max-width:1200px; aspect-ratio:1/1; }
-.tile { position:absolute; border-radius:8px; display:flex; justify-content:center; align-items:center; cursor:pointer; transition:all 0.3s ease; transform-style:preserve-3d; }
+.board { position:relative; margin-top:20px; width:95vw; height:95vw; max-width:1200px; max-height:1200px; }
+.tile { position:absolute; border-radius:8px; display:flex; justify-content:center; align-items:center; cursor:pointer; transition:all 0.3s ease; transform-style:preserve-3d; background:#fff; }
 .tile img { width:80%; height:80%; object-fit:contain; }
 .tile.flippable:hover { transform: scale(1.1); box-shadow:0 0 20px #0ff,0 0 40px #ff0,0 0 60px #f0f; }
 .tile.flipped { transform:rotateY(180deg); }
 #inventory { display:flex; justify-content:center; gap:10px; margin-top:20px; }
-.slot { width:60px; height:60px; background:#111; border:3px solid #0ff; border-radius:8px; display:flex; justify-content:center; align-items:center; }
+.slot { width:60px; height:60px; background:#fff; border:3px solid #0ff; border-radius:8px; display:flex; justify-content:center; align-items:center; }
 .slot img { width:80%; height:80%; object-fit:contain; }
 #score { margin-top:20px; font-size:1.5em; }
 </style>
 </head>
 <body>
 <div id="menu">
-<h1>Mahjong Pyramid Inventory Neon Pro</h1>
+<h1>Mahjong Pyramid Inventory Pro</h1>
 <p>Wybierz poziom trudności:</p>
-<button data-level="record">Rekordowy</button>
 <button data-level="pro">Zawodowy</button>
 <button data-level="extreme">Ekstremalny</button>
 <button data-level="hard">Trudny</button>
@@ -41,15 +40,14 @@ body { margin:0; font-family: Arial,sans-serif; background:#0b0c10; color:#fff; 
 </div>
 <script>
 const levelLayers = {
-  record:[8,7,6,5,4,3],
   pro:[7,6,5,4,3],
   extreme:[6,5,4,3],
   hard:[5,4,3,2],
   medium:[4,3,2],
-  classic:[], // losowe warstwy
+  classic:[],
   easy:[3,2]
 };
-const baseColors=['#ff073a','#00f0ff','#ffff00','#00ff3c','#ff00f0','#ff7f00','#00ffff','#7fff00'];
+const baseColors=['#ff073a','#00f0ff','#ffff00','#00ff3c','#ff00f0','#ff7f00','#00ffff','#7fff00','#ff7700','#00ff77'];
 let symbols=[], inventory=[], score=0;
 const boardEl=document.getElementById('board');
 const inventoryEls=document.querySelectorAll('.slot');
@@ -90,7 +88,7 @@ function startGame(level){
   const tileSize=Math.floor(boardWidth/(maxLayerSize+1));
   layers.forEach((layerSize,layerIndex)=>{
     const offsetX=(boardWidth - layerSize*tileSize)/2;
-    const offsetY=layerIndex*tileSize/2;
+    const offsetY=layerIndex*tileSize/1.5;
     for(let r=0;r<layerSize;r++){
       for(let c=0;c<layerSize;c++){
         if(idx>=pairs.length) break;
@@ -101,6 +99,7 @@ function startGame(level){
         tile.style.left=(c*tileSize + offsetX)+'px';
         tile.style.top=(r*tileSize/1.2 + offsetY)+'px';
         tile.style.border=`3px solid ${p.color}`;
+        tile.style.background='#fff';
         tile.dataset.id=p.id; tile.dataset.color=p.color;
         tile.innerHTML=`<img src='${p.img}'>`;
         tile.addEventListener('click',()=>pickTile(tile));
@@ -112,7 +111,7 @@ function startGame(level){
 }
 
 function pickTile(tile){
-  if(inventory.length>=4){ alert('Ekwipunek pełny! Gra resetuje się.'); startGame('record'); return; }
+  if(inventory.length>=4){ alert('Ekwipunek pełny! Gra resetuje się.'); startGame('pro'); return; }
   tile.style.visibility='hidden';
   const slot=inventoryEls[inventory.length];
   slot.innerHTML=tile.innerHTML;
@@ -126,6 +125,8 @@ function checkMatch(){
       if(inventory[i].id===inventory[j].id && inventory[i].color===inventory[j].color){
         inventory[i].tile.classList.add('flipped');
         inventory[j].tile.classList.add('flipped');
+        inventory[i].tile.style.boxShadow='0 0 30px '+inventory[i].color;
+        inventory[j].tile.style.boxShadow='0 0 30px '+inventory[j].color;
         setTimeout(()=>{
           score+=200; scoreEl.innerText='Score: '+score;
           inventory[i].tile.remove(); inventory[j].tile.remove();
@@ -136,7 +137,7 @@ function checkMatch(){
       }
     }
   }
-  if(inventory.length===4){ alert('Ekwipunek pełny! Gra resetuje się.'); startGame('record'); }
+  if(inventory.length===4){ alert('Ekwipunek pełny! Gra resetuje się.'); startGame('pro'); }
 }
 </script>
 </body>
