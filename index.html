@@ -2,225 +2,189 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Mahjong Neon Pro - Stabilny Układ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mahjong Inventory - Nowa Logika</title>
 <style>
 body {
   margin: 0;
+  font-family: Arial, sans-serif;
   background: #0b0c10;
+  color: #fff;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  min-height: 100vh;
-  font-family: Arial, sans-serif;
-  color: #fff;
 }
-#info {
-  display: flex;
-  gap: 2vw;
-  margin: 2vw;
-  font-size: 4vw;
-}
-.board {
-  position: relative;
+#menu, #game {
   width: 95vw;
   max-width: 1200px;
-  height: auto;
-  aspect-ratio: 1.7 / 1;
+  text-align: center;
+}
+#menu button {
+  margin: 10px;
+  padding: 1em 2em;
+  font-size: 1.2em;
+  border: none;
+  border-radius: 8px;
+  background: #222;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+#menu button:hover {
+  background: #00f0ff;
+  color: #000;
+}
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 8px;
+  margin-top: 20px;
 }
 .tile {
-  position: absolute;
-  cursor: pointer;
-  transition: transform 0.5s ease, box-shadow 0.3s ease;
-  transform-style: preserve-3d;
-  border-radius: 8px;
-}
-.tile.flippable:hover, .tile.flippable.touch {
-  transform: scale(1.1);
-  box-shadow: 0 0 25px #fff, 0 0 50px #0ff, 0 0 75px #f0f;
-  animation: pulse 1.2s infinite;
-}
-@keyframes pulse {
-  0% { box-shadow: 0 0 15px #fff,0 0 30px #0ff,0 0 45px #f0f; }
-  50% { box-shadow: 0 0 25px #fff,0 0 50px #0ff,0 0 75px #f0f; }
-  100% { box-shadow: 0 0 15px #fff,0 0 30px #0ff,0 0 45px #f0f; }
-}
-.front, .back {
-  position: absolute;
   width: 100%;
-  height: 100%;
+  aspect-ratio: 1/1;
+  background: #222;
+  border: 3px solid #fff;
   border-radius: 8px;
-  backface-visibility: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.tile img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
+.tile:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px #0ff, 0 0 40px #ff0, 0 0 60px #f0f;
+}
+#inventory {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+.slot {
+  width: 60px;
+  height: 60px;
+  background: #111;
+  border: 3px solid #0ff;
+  border-radius: 8px;
   display: flex;
   justify-content: center;
   align-items: center;
 }
-.front {
-  background: #222;
-  box-shadow: inset 0 0 10px #000;
-}
-.back {
-  transform: rotateY(180deg);
-  background: #111;
-  border: 3px solid;
-  transition: box-shadow 0.5s ease;
-}
-.back img {
-  width: 90%;
-  height: 90%;
+.slot img {
+  width: 80%;
+  height: 80%;
   object-fit: contain;
 }
-.tile.flipped {
-  transform: rotateY(180deg);
+#score {
+  margin-top: 20px;
+  font-size: 1.5em;
 }
 </style>
 </head>
 <body>
-<div id="info">
-  <div>Czas: <span id="time">0s</span></div>
-  <div>Ruchy: <span id="moves">0</span></div>
+<div id="menu">
+  <h1>Mahjong Inventory</h1>
+  <p>Wybierz poziom trudności:</p>
+  <button data-level="easy">Łatwy</button>
+  <button data-level="classic">Klasyczny</button>
+  <button data-level="medium">Średni</button>
+  <button data-level="hard">Trudny</button>
+  <button data-level="extreme">Ekstremalny</button>
+  <button data-level="pro">Zawodowy</button>
+  <button data-level="record">Rekordowy</button>
 </div>
-<div class="board" id="board"></div>
+<div id="game" style="display:none;">
+  <div id="score">Score: 0</div>
+  <div class="board" id="board"></div>
+  <div id="inventory">
+    <div class="slot"></div>
+    <div class="slot"></div>
+    <div class="slot"></div>
+    <div class="slot"></div>
+  </div>
+</div>
 <script>
-const totalImages = 16;
-const colors = ['#ff073a','#00f0ff','#ffff00','#00ff3c'];
-let symbols = [];
-for(let i=1;i<=totalImages;i++){
-  colors.forEach(color=>{
-    symbols.push({img:`assets/images/${i}.png`,color});
-    symbols.push({img:`assets/images/${i}.png`,color});
+const levels = {easy:8, classic:16, medium:24, hard:32, extreme:48, pro:64, record:72};
+let boardTiles = [], inventory = [], score = 0;
+const boardEl = document.getElementById('board');
+const inventoryEls = document.querySelectorAll('.slot');
+const scoreEl = document.getElementById('score');
+
+// Menu start
+document.querySelectorAll('#menu button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    startGame(btn.dataset.level);
+    document.getElementById('menu').style.display='none';
+    document.getElementById('game').style.display='block';
+  });
+});
+
+function startGame(level){
+  const count = levels[level];
+  boardTiles=[];
+  inventory=[];
+  score=0;
+  scoreEl.innerText='Score: 0';
+  boardEl.innerHTML='';
+  inventoryEls.forEach(slot=>slot.innerHTML='');
+  // generowanie par kafelków
+  const pairs = [];
+  for(let i=1;i<=count/2;i++) pairs.push({id:i, img:`assets/images/${i}.png`}, {id:i, img:`assets/images/${i}.png`});
+  pairs.sort(()=>Math.random()-0.5);
+  pairs.forEach(p=>{
+    const tile=document.createElement('div');
+    tile.classList.add('tile');
+    tile.dataset.id=p.id;
+    tile.innerHTML=`<img src='${p.img}'>`;
+    tile.addEventListener('click', ()=>pickTile(tile));
+    boardEl.appendChild(tile);
+    boardTiles.push(tile);
   });
 }
-symbols.sort(()=>Math.random()-0.5);
 
-const board = document.getElementById('board');
-let firstTile=null, lock=false, moves=0, matched=0, time=0;
-let timer=setInterval(()=>{time++;document.getElementById('time').innerText=time+'s';},1000);
+function pickTile(tile){
+  if(inventory.length>=4) {
+    alert('Ekwipunek pełny! Gra się resetuje.');
+    startGame('classic');
+    return;
+  }
+  tile.style.visibility='hidden';
+  const slot = inventoryEls[inventory.length];
+  slot.innerHTML = tile.innerHTML;
+  inventory.push({id:tile.dataset.id, tile:tile});
 
-function createBoard(){
-  board.innerHTML='';
-  const boardWidth = board.clientWidth;
-  const boardHeight = board.clientHeight;
+  checkMatch();
+}
 
-  // Stały układ piramidy - 3 warstwy
-  const layers = [
-    {cols:12, rows:6, offsetX:0, offsetY:0, z:0},
-    {cols:10, rows:4, offsetX:boardWidth*0.05, offsetY:boardHeight*0.05, z:1},
-    {cols:8, rows:2, offsetX:boardWidth*0.1, offsetY:boardHeight*0.1, z:2}
-  ];
-
-  // dopasowanie rozmiaru kafelka do szerokości planszy
-  const tileWidth = Math.min(boardWidth / 12 * 0.95, 60);
-  const tileHeight = Math.min(boardHeight / 6 * 0.95, 80);
-
-  let idx=0;
-  layers.forEach(layer=>{
-    for(let y=0;y<layer.rows;y++){
-      for(let x=0;x<layer.cols;x++){
-        if(idx>=symbols.length) break;
-        let s=symbols[idx];
-        const tile=document.createElement('div');
-        tile.classList.add('tile');
-        tile.style.width = tileWidth+'px';
-        tile.style.height = tileHeight+'px';
-        tile.style.left = (x*tileWidth + layer.offsetX)+'px';
-        tile.style.top = (y*tileHeight + layer.offsetY)+'px';
-        tile.style.zIndex=layer.z;
-        tile.dataset.layer=layer.z;
-        tile.dataset.x=x;
-        tile.dataset.y=y;
-        tile.dataset.matched='false';
-
-        tile.innerHTML=`<div class="front"></div><div class="back" style="border-color:${s.color};"><img src="${s.img}"></div>`;
-
-        tile.addEventListener('click',()=>{
-          if(lock || tile.classList.contains('flipped') || tile.dataset.matched==='true') return;
-          if(!isFree(tile)) return;
-          tile.classList.add('flipped');
-          tile.classList.remove('flippable');
-          if(!firstTile){firstTile=tile;}
-          else{
-            moves++;
-            document.getElementById('moves').innerText=moves;
-            if(tile.querySelector('img').src===firstTile.querySelector('img').src && tile.querySelector('.back').style.borderColor===firstTile.querySelector('.back').style.borderColor){
-              matched+=2;
-              firstTile.dataset.matched='true';
-              tile.dataset.matched='true';
-              glowTile(tile,s.color);
-              glowTile(firstTile,s.color);
-              firstTile=null;
-              if(matched>=symbols.length){
-                clearInterval(timer);
-                winAnimation();
-              }
-            } else{
-              lock=true;
-              setTimeout(()=>{
-                tile.classList.remove('flipped');
-                firstTile.classList.remove('flipped');
-                firstTile.classList.add('flippable');
-                tile.classList.add('flippable');
-                firstTile=null;
-                lock=false;
-              },700);
-            }
-          }
-        });
-        board.appendChild(tile);
-        idx++;
+function checkMatch(){
+  for(let i=0;i<inventory.length;i++){
+    for(let j=i+1;j<inventory.length;j++){
+      if(inventory[i].id===inventory[j].id){
+        // dopasowanie
+        score+=200;
+        scoreEl.innerText='Score: '+score;
+        inventory[i].tile.remove();
+        inventory[j].tile.remove();
+        inventoryEls[i].innerHTML='';
+        inventoryEls[j].innerHTML='';
+        inventory.splice(j,1);
+        inventory.splice(i,1);
+        return;
       }
     }
-  });
-  document.querySelectorAll('.tile').forEach(t=>{
-    if(isFree(t)) t.classList.add('flippable');
-  });
-}
-
-window.addEventListener('resize',()=>{createBoard();});
-createBoard();
-
-function isFree(tile){
-  const z=parseInt(tile.dataset.layer);
-  const x=parseInt(tile.dataset.x);
-  const y=parseInt(tile.dataset.y);
-  const tiles=document.querySelectorAll('.tile');
-  let freeLeft=true, freeRight=true, freeTop=true;
-  tiles.forEach(t=>{
-    const tz=parseInt(t.dataset.layer), tx=parseInt(t.dataset.x), ty=parseInt(t.dataset.y);
-    if(tz===z){
-      if(tx===x-1 && ty===y && t.dataset.matched==='false') freeLeft=false;
-      if(tx===x+1 && ty===y && t.dataset.matched==='false') freeRight=false;
-    }
-    if(tz>z){
-      if(tx>=x && tx<=x && ty>=y && ty<=y && t.dataset.matched==='false') freeTop=false;
-    }
-  });
-  return (freeLeft || freeRight) && freeTop;
-}
-
-function glowTile(tile,color){
-  tile.querySelector('.back').style.boxShadow=`0 0 20px ${color},0 0 40px ${color},0 0 60px ${color}`;
-}
-
-function winAnimation(){
-  let tiles=document.querySelectorAll('.tile');
-  tiles.forEach((tile,i)=>{
-    setTimeout(()=>{
-      tile.style.transform='rotateY(360deg) scale(1.3)';
-      tile.querySelector('.back').style.boxShadow='0 0 50px #fff,0 0 100px #0ff,0 0 150px #f0f';
-    },i*50);
-  });
-  setTimeout(()=>{ alert(`🎉 Wygrałeś! Czas: ${time}s, Ruchy: ${moves}`);},tiles.length*50+500);
-}
-
-board.addEventListener('touchstart', e=>{
-  const tile=e.target.closest('.tile');
-  if(tile && tile.classList.contains('flippable')){
-    tile.classList.add('touch');
-    setTimeout(()=>tile.classList.remove('touch'),500);
   }
-});
+  if(inventory.length===4){
+    alert('Ekwipunek pełny! Gra się resetuje.');
+    startGame('classic');
+  }
+}
 </script>
 </body>
 </html>
