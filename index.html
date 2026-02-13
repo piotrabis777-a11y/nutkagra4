@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Mahjong Neon Pro - Responsywny</title>
+<title>Mahjong Neon Pro - Fully Responsive</title>
 <style>
 body {
   margin: 0;
@@ -18,23 +18,26 @@ body {
 }
 #info {
   display: flex;
-  gap: 15px;
-  margin: 15px;
+  gap: 2vw;
+  margin: 2vw;
   font-size: 4vw;
 }
 .board {
   position: relative;
   width: 95vw;
+  height: 80vw;
   max-width: 1200px;
-  height: 55vh;
+  max-height: 700px;
 }
 .tile {
   position: absolute;
   cursor: pointer;
   transition: transform 0.5s ease, box-shadow 0.3s ease;
   transform-style: preserve-3d;
-  width: calc(5vw + 1px);
-  height: calc(7vw + 1px);
+  width: calc(7vw + 1px);
+  height: calc(9vw + 1px);
+  max-width: 60px;
+  max-height: 80px;
 }
 .tile.flippable:hover, .tile.flippable.touch {
   transform: scale(1.1);
@@ -98,67 +101,80 @@ const board = document.getElementById('board');
 let firstTile=null, lock=false, moves=0, matched=0, time=0;
 let timer=setInterval(()=>{time++;document.getElementById('time').innerText=time+'s';},1000);
 
-const layers=[
-  {countX:12,countY:6,offsetX:0,offsetY:0,z:0},
-  {countX:10,countY:4,offsetX:5,offsetY:3,z:1},
-  {countX:8,countY:2,offsetX:10,offsetY:6,z:2}
-];
-let idx=0;
-layers.forEach(layer=>{
-  for(let y=0;y<layer.countY;y++){
-    for(let x=0;x<layer.countX;x++){
-      if(idx>=symbols.length) break;
-      let s=symbols[idx];
-      const tile=document.createElement('div');
-      tile.classList.add('tile');
-      tile.style.left=`calc(${x*6.5}vw + ${layer.offsetX}vw)`;
-      tile.style.top=`calc(${y*8}vw + ${layer.offsetY}vw)`;
-      tile.style.zIndex=layer.z;
-      tile.dataset.layer=layer.z;
-      tile.dataset.x=x;
-      tile.dataset.y=y;
-      tile.dataset.matched='false';
+function createBoard(){
+  board.innerHTML='';
+  const boardWidth = board.clientWidth;
+  const boardHeight = board.clientHeight;
 
-      tile.innerHTML=`<div class="front"></div><div class="back" style="border-color:${s.color};"><img src="${s.img}"></div>`;
+  const layers=[
+    {countX:Math.floor(12*boardWidth/1200),countY:Math.floor(6*boardHeight/700),offsetX:0,offsetY:0,z:0},
+    {countX:Math.floor(10*boardWidth/1200),countY:Math.floor(4*boardHeight/700),offsetX:boardWidth*0.05,offsetY:boardHeight*0.05,z:1},
+    {countX:Math.floor(8*boardWidth/1200),countY:Math.floor(2*boardHeight/700),offsetX:boardWidth*0.1,offsetY:boardHeight*0.1,z:2}
+  ];
 
-      tile.addEventListener('click',()=>{
-        if(lock || tile.classList.contains('flipped') || tile.dataset.matched==='true') return;
-        if(!isFree(tile)) return;
-        tile.classList.add('flipped');
-        tile.classList.remove('flippable');
-        if(!firstTile){firstTile=tile;}
-        else{
-          moves++;
-          document.getElementById('moves').innerText=moves;
-          if(tile.querySelector('img').src===firstTile.querySelector('img').src && tile.querySelector('.back').style.borderColor===firstTile.querySelector('.back').style.borderColor){
-            matched+=2;
-            firstTile.dataset.matched='true';
-            tile.dataset.matched='true';
-            glowTile(tile,s.color);
-            glowTile(firstTile,s.color);
-            firstTile=null;
-            if(matched>=symbols.length){
-              clearInterval(timer);
-              winAnimation();
-            }
-          } else{
-            lock=true;
-            setTimeout(()=>{
-              tile.classList.remove('flipped');
-              firstTile.classList.remove('flipped');
-              firstTile.classList.add('flippable');
-              tile.classList.add('flippable');
+  let idx=0;
+  layers.forEach(layer=>{
+    for(let y=0;y<layer.countY;y++){
+      for(let x=0;x<layer.countX;x++){
+        if(idx>=symbols.length) break;
+        let s=symbols[idx];
+        const tile=document.createElement('div');
+        tile.classList.add('tile');
+        tile.style.left=`${x*(boardWidth/layer.countX)+layer.offsetX}px`;
+        tile.style.top=`${y*(boardHeight/layer.countY)+layer.offsetY}px`;
+        tile.style.zIndex=layer.z;
+        tile.dataset.layer=layer.z;
+        tile.dataset.x=x;
+        tile.dataset.y=y;
+        tile.dataset.matched='false';
+
+        tile.innerHTML=`<div class="front"></div><div class="back" style="border-color:${s.color};"><img src="${s.img}"></div>`;
+
+        tile.addEventListener('click',()=>{
+          if(lock || tile.classList.contains('flipped') || tile.dataset.matched==='true') return;
+          if(!isFree(tile)) return;
+          tile.classList.add('flipped');
+          tile.classList.remove('flippable');
+          if(!firstTile){firstTile=tile;}
+          else{
+            moves++;
+            document.getElementById('moves').innerText=moves;
+            if(tile.querySelector('img').src===firstTile.querySelector('img').src && tile.querySelector('.back').style.borderColor===firstTile.querySelector('.back').style.borderColor){
+              matched+=2;
+              firstTile.dataset.matched='true';
+              tile.dataset.matched='true';
+              glowTile(tile,s.color);
+              glowTile(firstTile,s.color);
               firstTile=null;
-              lock=false;
-            },700);
+              if(matched>=symbols.length){
+                clearInterval(timer);
+                winAnimation();
+              }
+            } else{
+              lock=true;
+              setTimeout(()=>{
+                tile.classList.remove('flipped');
+                firstTile.classList.remove('flipped');
+                firstTile.classList.add('flippable');
+                tile.classList.add('flippable');
+                firstTile=null;
+                lock=false;
+              },700);
+            }
           }
-        }
-      });
-      board.appendChild(tile);
-      idx++;
+        });
+        board.appendChild(tile);
+        idx++;
+      }
     }
-  }
-});
+  });
+  document.querySelectorAll('.tile').forEach(t=>{
+    if(isFree(t)) t.classList.add('flippable');
+  });
+}
+
+window.addEventListener('resize',()=>{createBoard();});
+createBoard();
 
 function isFree(tile){
   const z=parseInt(tile.dataset.layer);
@@ -194,18 +210,12 @@ function winAnimation(){
   setTimeout(()=>{ alert(`🎉 Wygrałeś! Czas: ${time}s, Ruchy: ${moves}`);},tiles.length*50+500);
 }
 
-// dotyk - dodanie klasy pulsującej
 board.addEventListener('touchstart', e=>{
   const tile=e.target.closest('.tile');
   if(tile && tile.classList.contains('flippable')){
     tile.classList.add('touch');
     setTimeout(()=>tile.classList.remove('touch'),500);
   }
-});
-
-// początkowe podświetlenie wolnych kafelków
-document.querySelectorAll('.tile').forEach(t=>{
-  if(isFree(t)) t.classList.add('flippable');
 });
 </script>
 </body>
