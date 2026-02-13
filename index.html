@@ -6,107 +6,32 @@
 <title>Mahjong PRO</title>
 
 <style>
-
 *{box-sizing:border-box;}
-
-body{
-    margin:0;
-    font-family:Arial;
-    background:#3b2a1d;
-    overflow:hidden;
-}
+body{margin:0;font-family:Arial;background:#3b2a1d;overflow:hidden;}
 
 #menu{
-    position:fixed;
-    inset:0;
+    position:fixed;inset:0;
     background:linear-gradient(135deg,#2d1b12,#4b3426);
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    gap:15px;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;gap:20px;
     z-index:1000;
 }
+#menu h1{color:white;margin-bottom:20px;}
+button{padding:15px 30px;font-size:20px;border:none;border-radius:10px;cursor:pointer;}
 
-#menu h1{
-    color:white;
-    margin-bottom:20px;
-}
-
-button{
-    padding:12px 30px;
-    font-size:18px;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
-}
-
-#game{
-    position:absolute;
-    width:100vw;
-    height:85vh;
-}
-
-.tile{
-    position:absolute;
-    border-radius:14px;
-    background:white;
-    transition:0.25s ease;
-}
-
-.tile:hover{transform:scale(1.1);}
-
-.blocked{
-    opacity:0.3;
-    pointer-events:none;
-}
-
-.inner{
-    width:100%;
-    height:100%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:white;
-    border-radius:10px;
-}
-
-.inner img{
-    width:70%;
-    height:70%;
-    object-fit:contain;
-}
+#game{position:absolute;width:100vw;height:85vh;}
+.tile{position:absolute;border-radius:16px;background:white;transition:0.25s ease;}
+.tile:hover{transform:scale(1.05);}
+.blocked{opacity:0.3;pointer-events:none;}
+.inner{width:90%;height:90%;display:flex;align-items:center;justify-content:center;background:white;border-radius:12px;}
+.inner img{width:90%;height:90%;object-fit:contain;}
 
 #inventory{
-    position:absolute;
-    bottom:0;
-    width:100%;
-    height:15vh;
-    background:#2b1c12;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:20px;
+    position:absolute;bottom:0;width:100%;height:15vh;background:#2b1c12;
+    display:flex;justify-content:center;align-items:center;gap:25px;
 }
+.invTile{width:70px;height:70px;background:white;border-radius:10px;display:flex;align-items:center;justify-content:center;transition:0.3s;}
 
-.invTile{
-    width:60px;
-    height:60px;
-    background:white;
-    border-radius:10px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-#scoreBoard{
-    position:absolute;
-    top:10px;
-    left:10px;
-    color:white;
-    z-index:500;
-}
-
+#scoreBoard{position:absolute;top:10px;left:10px;color:white;z-index:500;font-size:18px;}
 </style>
 </head>
 <body>
@@ -121,264 +46,123 @@ button{
 <button onclick="startGame('classic')">Klasyczny (losowy)</button>
 </div>
 
-<div id="scoreBoard" style="display:none;">
-Score: <span id="score">0</span><br>
-Rekord: <span id="record">0</span>
-</div>
-
+<div id="scoreBoard" style="display:none;">Score: <span id="score">0</span><br>Rekord: <span id="record">0</span></div>
 <div id="game"></div>
 <div id="inventory"></div>
 
 <script>
-
 const COLORS=[
 "#ff2bd6","#00f7ff","#ffe600","#00ff85",
 "#ff5e00","#8c00ff","#ff004c","#00ffcc",
 "#39ff14","#ff00ff","#00b3ff","#ffcc00"
 ];
 
-let board=[];
-let inventory=[];
-let score=0;
-let levelName="";
-let tileSize=80;
-let audioCtx;
+let board=[], inventory=[], score=0, levelName="", tileSize=80, audioCtx;
 
-function initAudio(){
-    if(!audioCtx)
-        audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-}
-
-function sound(freq,duration){
-    if(!audioCtx) return;
-    const osc=audioCtx.createOscillator();
-    const gain=audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.frequency.value=freq;
-    osc.start();
-    gain.gain.exponentialRampToValueAtTime(
-        0.0001,audioCtx.currentTime+duration
-    );
-    osc.stop(audioCtx.currentTime+duration);
-}
+function initAudio(){if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();}
+function sound(freq,duration){if(!audioCtx) return; const osc=audioCtx.createOscillator(); const gain=audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.frequency.value=freq; osc.start(); gain.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+duration); osc.stop(audioCtx.currentTime+duration);}
+function preload(){for(let i=1;i<=16;i++){const img=new Image(); img.src="assets/images/"+i+".png";}} preload();
 
 function startGame(level){
-
     initAudio();
-
     document.getElementById("menu").style.display="none";
     document.getElementById("scoreBoard").style.display="block";
-
-    levelName=level;
-    score=0;
-    inventory=[];
+    levelName=level; score=0; inventory=[];
     createBoard(level);
 }
 
 function createBoard(level){
-
-    let layers;
-
+    let layers=[];
     if(level==="easy") layers=[3,2];
     if(level==="medium") layers=[4,3,2];
     if(level==="hard") layers=[5,4,3,2];
     if(level==="extreme") layers=[6,5,4,3];
     if(level==="pro") layers=[7,6,5,4,3];
-    if(level==="classic"){
-        layers=[];
-        let count=Math.floor(Math.random()*4)+3;
-        for(let i=0;i<count;i++){
-            layers.push(Math.floor(Math.random()*5)+3);
-        }
-    }
-
-    board=[];
-    let id=0;
-
-    layers.forEach((size,z)=>{
-        for(let y=0;y<size;y++){
-            for(let x=0;x<size;x++){
-                board.push({x,y,z,id:id++});
-            }
-        }
-    });
-
+    if(level==="classic"){let count=Math.floor(Math.random()*4)+3; for(let i=0;i<count;i++) layers.push(Math.floor(Math.random()*5)+3);}
+    board=[]; let id=0;
+    layers.forEach((size,z)=>{for(let y=0;y<size;y++){for(let x=0;x<size;x++){board.push({x,y,z,id:id++});}}});
     generateTiles();
 }
 
 function generateTiles(){
-
-    let needed=board.length;
-    let tiles=[];
-    let imgIndex=0;
-
+    let needed=board.length; let tiles=[]; let imgIndex=0;
     while(tiles.length<needed){
-        for(let p=0;p<4;p++){
-            let color=COLORS[p%COLORS.length];
-            tiles.push({img:imgIndex,color});
-            tiles.push({img:imgIndex,color});
-        }
+        for(let p=0;p<4;p++){ let color=COLORS[p%COLORS.length]; tiles.push({img:imgIndex,color}); tiles.push({img:imgIndex,color}); }
         imgIndex=(imgIndex+1)%16;
     }
-
-    tiles=tiles.slice(0,needed);
-    tiles.sort(()=>Math.random()-0.5);
-
-    board.forEach((pos,i)=>{
-        pos.img=tiles[i].img;
-        pos.color=tiles[i].color;
-        pos.removed=false;
-    });
-
+    tiles=tiles.slice(0,needed); tiles.sort(()=>Math.random()-0.5);
+    board.forEach((pos,i)=>{pos.img=tiles[i].img; pos.color=tiles[i].color; pos.removed=false;});
     render();
 }
 
 function isFree(tile){
-
     if(tile.removed) return false;
-
-    const above=board.find(t=>
-        !t.removed &&
-        t.x===tile.x &&
-        t.y===tile.y &&
-        t.z===tile.z+1
-    );
-
+    const above=board.find(t=>!t.removed&&t.x===tile.x&&t.y===tile.y&&t.z===tile.z+1);
     if(above) return false;
-
-    const left=board.find(t=>
-        !t.removed &&
-        t.x===tile.x-1 &&
-        t.y===tile.y &&
-        t.z===tile.z
-    );
-
-    const right=board.find(t=>
-        !t.removed &&
-        t.x===tile.x+1 &&
-        t.y===tile.y &&
-        t.z===tile.z
-    );
-
-    return !left || !right;
+    const left=board.find(t=>!t.removed&&t.x===tile.x-1&&t.y===tile.y&&t.z===tile.z);
+    const right=board.find(t=>!t.removed&&t.x===tile.x+1&&t.y===tile.y&&t.z===tile.z);
+    return !left||!right;
 }
 
 function render(){
-
     const container=document.getElementById("game");
     container.innerHTML="";
-
     const maxLayer=Math.max(...board.map(t=>t.z));
     const baseSize=Math.max(...board.filter(t=>t.z===0).map(t=>t.x))+1;
-
-    tileSize=Math.min(
-        window.innerWidth/(baseSize+2),
-        window.innerHeight/(baseSize+6)
-    );
-
+    tileSize=Math.min(window.innerWidth/(baseSize+1.5), window.innerHeight/(baseSize+5));
+    tileSize=Math.max(60, Math.min(tileSize, 120)); // min/max dla telefonów
     board.forEach(tile=>{
         if(tile.removed) return;
-
         const div=document.createElement("div");
         div.className="tile";
-
         if(!isFree(tile)) div.classList.add("blocked");
-
         div.style.width=tileSize+"px";
         div.style.height=tileSize+"px";
-
         div.style.left=((tile.x+(maxLayer-tile.z)/2)*tileSize)+"px";
         div.style.top=((tile.y+(maxLayer-tile.z)/2)*tileSize)+"px";
-
         div.style.border="4px solid "+tile.color;
-        div.style.boxShadow="0 0 15px "+tile.color;
-
-        div.innerHTML=
-        `<div class="inner">
-            <img src="assets/images/${tile.img+1}.png">
-        </div>`;
-
+        div.style.boxShadow="0 0 18px "+tile.color;
+        div.innerHTML=`<div class="inner"><img src="assets/images/${tile.img+1}.png"></div>`;
         div.onclick=()=>select(tile);
-
         container.appendChild(div);
     });
-
     renderInventory();
 }
 
 function select(tile){
-
     if(!isFree(tile)) return;
-
     sound(400,0.1);
-
-    inventory.push(tile);
-    tile.removed=true;
-
+    inventory.push(tile); tile.removed=true;
     if(inventory.length===2){
-        if(inventory[0].img===inventory[1].img &&
-           inventory[0].color===inventory[1].color){
-            score+=200;
-            sound(800,0.2);
-            inventory=[];
+        if(inventory[0].img===inventory[1].img && inventory[0].color===inventory[1].color){
+            score+=200; sound(800,0.2); inventory=[];
         }
     }
-
-    if(inventory.length===4){
-        sound(150,0.5);
-        alert("Ekwipunek pełny! Restart.");
-        resetGame();
-        return;
-    }
-
-    if(board.every(t=>t.removed)){
-        sound(1000,0.4);
-        saveRecord();
-        alert("WYGRANA! Score: "+score);
-        resetGame();
-        return;
-    }
-
+    if(inventory.length===4){sound(150,0.5); alert("Ekwipunek pełny! Restart."); resetGame(); return;}
+    if(board.every(t=>t.removed)){sound(1000,0.4); saveRecord(); alert("WYGRANA! Score: "+score); resetGame(); return;}
     render();
 }
 
 function renderInventory(){
-
     const inv=document.getElementById("inventory");
     inv.innerHTML="";
-
     inventory.forEach(tile=>{
         const d=document.createElement("div");
         d.className="invTile";
         d.style.border="3px solid "+tile.color;
-        d.innerHTML=`<img src="assets/images/${tile.img+1}.png" width="80%">`;
+        d.innerHTML=`<img src="assets/images/${tile.img+1}.png" width="90%">`;
         inv.appendChild(d);
     });
-
     document.getElementById("score").innerText=score;
-    document.getElementById("record").innerText=
-        localStorage.getItem("record_"+levelName)||0;
+    document.getElementById("record").innerText=localStorage.getItem("record_"+levelName)||0;
 }
 
-function saveRecord(){
-    let key="record_"+levelName;
-    let best=localStorage.getItem(key)||0;
-    if(score>best){
-        localStorage.setItem(key,score);
-    }
-}
-
-function resetGame(){
-    inventory=[];
-    score=0;
-    createBoard(levelName);
-}
-
+function saveRecord(){let key="record_"+levelName; let best=localStorage.getItem(key)||0; if(score>best){localStorage.setItem(key,score);}}
+function resetGame(){inventory=[]; score=0; createBoard(levelName);}
 window.onresize=render;
-
 </script>
 </body>
 </html>
+
 
 
