@@ -7,31 +7,37 @@
 
 <style>
 
+*{box-sizing:border-box;}
+
 body{
     margin:0;
     font-family:Arial;
-    background:url("https://i.imgur.com/8Qf6R0K.jpg");
-    background-size:cover;
+    background:#3b2a1d;
     overflow:hidden;
 }
 
 #menu{
-    position:absolute;
-    width:100%;
-    height:100%;
+    position:fixed;
+    inset:0;
+    background:linear-gradient(135deg,#2d1b12,#4b3426);
     display:flex;
     flex-direction:column;
     justify-content:center;
     align-items:center;
     gap:15px;
-    background:rgba(0,0,0,0.6);
+    z-index:1000;
+}
+
+#menu h1{
+    color:white;
+    margin-bottom:20px;
 }
 
 button{
-    padding:12px 25px;
+    padding:12px 30px;
     font-size:18px;
     border:none;
-    border-radius:8px;
+    border-radius:10px;
     cursor:pointer;
 }
 
@@ -48,12 +54,10 @@ button{
     transition:0.25s ease;
 }
 
-.tile:hover{
-    transform:scale(1.1);
-}
+.tile:hover{transform:scale(1.1);}
 
 .blocked{
-    opacity:0.35;
+    opacity:0.3;
     pointer-events:none;
 }
 
@@ -78,7 +82,7 @@ button{
     bottom:0;
     width:100%;
     height:15vh;
-    background:rgba(0,0,0,0.6);
+    background:#2b1c12;
     display:flex;
     justify-content:center;
     align-items:center;
@@ -93,7 +97,6 @@ button{
     display:flex;
     align-items:center;
     justify-content:center;
-    transition:0.3s;
 }
 
 #scoreBoard{
@@ -101,7 +104,7 @@ button{
     top:10px;
     left:10px;
     color:white;
-    font-size:18px;
+    z-index:500;
 }
 
 </style>
@@ -109,7 +112,7 @@ button{
 <body>
 
 <div id="menu">
-<h1 style="color:white;">MAHJONG PRO</h1>
+<h1>MAHJONG PRO</h1>
 <button onclick="startGame('easy')">Łatwy</button>
 <button onclick="startGame('medium')">Średni</button>
 <button onclick="startGame('hard')">Trudny</button>
@@ -139,9 +142,15 @@ let inventory=[];
 let score=0;
 let levelName="";
 let tileSize=80;
-let audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+let audioCtx;
+
+function initAudio(){
+    if(!audioCtx)
+        audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+}
 
 function sound(freq,duration){
+    if(!audioCtx) return;
     const osc=audioCtx.createOscillator();
     const gain=audioCtx.createGain();
     osc.connect(gain);
@@ -154,15 +163,9 @@ function sound(freq,duration){
     osc.stop(audioCtx.currentTime+duration);
 }
 
-function preload(){
-    for(let i=1;i<=16;i++){
-        const img=new Image();
-        img.src="images/"+i+".png";
-    }
-}
-preload();
-
 function startGame(level){
+
+    initAudio();
 
     document.getElementById("menu").style.display="none";
     document.getElementById("scoreBoard").style.display="block";
@@ -208,16 +211,14 @@ function generateTiles(){
 
     let needed=board.length;
     let tiles=[];
-
     let imgIndex=0;
-    while(tiles.length<needed){
 
+    while(tiles.length<needed){
         for(let p=0;p<4;p++){
             let color=COLORS[p%COLORS.length];
             tiles.push({img:imgIndex,color});
             tiles.push({img:imgIndex,color});
         }
-
         imgIndex=(imgIndex+1)%16;
     }
 
@@ -295,10 +296,10 @@ function render(){
 
         div.innerHTML=
         `<div class="inner">
-            <img src="images/${tile.img+1}.png">
+            <img src="assets/images/${tile.img+1}.png">
         </div>`;
 
-        div.onclick=()=>select(tile,div);
+        div.onclick=()=>select(tile);
 
         container.appendChild(div);
     });
@@ -306,23 +307,18 @@ function render(){
     renderInventory();
 }
 
-function select(tile,element){
+function select(tile){
 
     if(!isFree(tile)) return;
 
     sound(400,0.1);
 
-    element.style.transform="scale(1.2)";
-    setTimeout(()=>element.style.transform="scale(1)",150);
-
     inventory.push(tile);
     tile.removed=true;
 
     if(inventory.length===2){
-
         if(inventory[0].img===inventory[1].img &&
            inventory[0].color===inventory[1].color){
-
             score+=200;
             sound(800,0.2);
             inventory=[];
@@ -331,20 +327,16 @@ function select(tile,element){
 
     if(inventory.length===4){
         sound(150,0.5);
-        setTimeout(()=>{
-            alert("Ekwipunek pełny! Restart.");
-            location.reload();
-        },300);
+        alert("Ekwipunek pełny! Restart.");
+        resetGame();
         return;
     }
 
     if(board.every(t=>t.removed)){
         sound(1000,0.4);
         saveRecord();
-        setTimeout(()=>{
-            alert("WYGRANA! Score: "+score);
-            location.reload();
-        },300);
+        alert("WYGRANA! Score: "+score);
+        resetGame();
         return;
     }
 
@@ -360,7 +352,7 @@ function renderInventory(){
         const d=document.createElement("div");
         d.className="invTile";
         d.style.border="3px solid "+tile.color;
-        d.innerHTML=`<img src="images/${tile.img+1}.png" width="80%">`;
+        d.innerHTML=`<img src="assets/images/${tile.img+1}.png" width="80%">`;
         inv.appendChild(d);
     });
 
@@ -370,12 +362,17 @@ function renderInventory(){
 }
 
 function saveRecord(){
-
     let key="record_"+levelName;
     let best=localStorage.getItem(key)||0;
     if(score>best){
         localStorage.setItem(key,score);
     }
+}
+
+function resetGame(){
+    inventory=[];
+    score=0;
+    createBoard(levelName);
 }
 
 window.onresize=render;
