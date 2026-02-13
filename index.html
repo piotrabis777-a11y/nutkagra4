@@ -2,8 +2,8 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mahjong Neon Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mahjong Neon Pro - Responsywny</title>
 <style>
 body {
   margin: 0;
@@ -18,24 +18,25 @@ body {
 }
 #info {
   display: flex;
-  gap: 20px;
-  margin: 20px;
-  font-size: 18px;
+  gap: 15px;
+  margin: 15px;
+  font-size: 4vw;
 }
 .board {
   position: relative;
-  width: 1200px;
-  height: 700px;
+  width: 95vw;
+  max-width: 1200px;
+  height: 55vh;
 }
 .tile {
-  width: 60px;
-  height: 80px;
   position: absolute;
   cursor: pointer;
-  transition: transform 0.6s ease, box-shadow 0.3s ease;
+  transition: transform 0.5s ease, box-shadow 0.3s ease;
   transform-style: preserve-3d;
+  width: calc(5vw + 1px);
+  height: calc(7vw + 1px);
 }
-.tile.flippable:hover {
+.tile.flippable:hover, .tile.flippable.touch {
   transform: scale(1.1);
   box-shadow: 0 0 25px #fff, 0 0 50px #0ff, 0 0 75px #f0f;
   animation: pulse 1.2s infinite;
@@ -99,8 +100,8 @@ let timer=setInterval(()=>{time++;document.getElementById('time').innerText=time
 
 const layers=[
   {countX:12,countY:6,offsetX:0,offsetY:0,z:0},
-  {countX:10,countY:4,offsetX:60,offsetY:40,z:1},
-  {countX:8,countY:2,offsetX:120,offsetY:80,z:2}
+  {countX:10,countY:4,offsetX:5,offsetY:3,z:1},
+  {countX:8,countY:2,offsetX:10,offsetY:6,z:2}
 ];
 let idx=0;
 layers.forEach(layer=>{
@@ -110,8 +111,8 @@ layers.forEach(layer=>{
       let s=symbols[idx];
       const tile=document.createElement('div');
       tile.classList.add('tile');
-      tile.style.left=`${x*62+layer.offsetX}px`;
-      tile.style.top=`${y*82+layer.offsetY}px`;
+      tile.style.left=`calc(${x*6.5}vw + ${layer.offsetX}vw)`;
+      tile.style.top=`calc(${y*8}vw + ${layer.offsetY}vw)`;
       tile.style.zIndex=layer.z;
       tile.dataset.layer=layer.z;
       tile.dataset.x=x;
@@ -159,11 +160,6 @@ layers.forEach(layer=>{
   }
 });
 
-// dodaj klasę flippable dla wszystkich wolnych kafelków
-document.querySelectorAll('.tile').forEach(t=>{
-  if(isFree(t)) t.classList.add('flippable');
-});
-
 function isFree(tile){
   const z=parseInt(tile.dataset.layer);
   const x=parseInt(tile.dataset.x);
@@ -197,6 +193,20 @@ function winAnimation(){
   });
   setTimeout(()=>{ alert(`🎉 Wygrałeś! Czas: ${time}s, Ruchy: ${moves}`);},tiles.length*50+500);
 }
+
+// dotyk - dodanie klasy pulsującej
+board.addEventListener('touchstart', e=>{
+  const tile=e.target.closest('.tile');
+  if(tile && tile.classList.contains('flippable')){
+    tile.classList.add('touch');
+    setTimeout(()=>tile.classList.remove('touch'),500);
+  }
+});
+
+// początkowe podświetlenie wolnych kafelków
+document.querySelectorAll('.tile').forEach(t=>{
+  if(isFree(t)) t.classList.add('flippable');
+});
 </script>
 </body>
 </html>
