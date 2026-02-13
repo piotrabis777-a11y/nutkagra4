@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mahjong Neon - 64 pary</title>
+<title>Mahjong Neon Classic</title>
 <style>
 body {
   margin: 0;
   background: #0b0c10;
   display: flex;
-  justify-content: center;
-  align-items: center;
   flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
   min-height: 100vh;
   font-family: Arial, sans-serif;
   color: #fff;
@@ -23,30 +23,21 @@ body {
   font-size: 18px;
 }
 .board {
-  display: grid;
-  grid-template-columns: repeat(16, 60px);
-  grid-gap: 8px;
-  perspective: 1000px;
+  position: relative;
+  width: 1200px;
+  height: 700px;
 }
 .tile {
   width: 60px;
   height: 80px;
+  position: absolute;
   cursor: pointer;
-  transition: transform 0.3s, box-shadow 0.3s;
+  transition: transform 0.6s, box-shadow 0.3s;
+  transform-style: preserve-3d;
 }
 .tile:hover {
   transform: scale(1.1);
   box-shadow: 0 0 15px #fff, 0 0 30px #0ff, 0 0 45px #f0f;
-}
-.inner {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transition: transform 0.6s;
-  transform-style: preserve-3d;
-}
-.tile.flipped .inner {
-  transform: rotateY(180deg);
 }
 .front, .back {
   position: absolute;
@@ -65,14 +56,15 @@ body {
 .back {
   transform: rotateY(180deg);
   background: #111;
-  box-shadow: 0 0 10px #000;
   border: 3px solid;
-  animation: glow 1.5s infinite alternate;
 }
 .back img {
   width: 90%;
   height: 90%;
   object-fit: contain;
+}
+.tile.flipped {
+  transform: rotateY(180deg);
 }
 @keyframes glow {
   0% { box-shadow: 0 0 5px #fff; }
@@ -90,56 +82,99 @@ body {
 <script>
 const totalImages = 16;
 const colors = ['#ff073a','#00f0ff','#ffff00','#00ff3c'];
-let symbols = [];
+let symbols=[];
 for(let i=1;i<=totalImages;i++){
-  colors.forEach(color => {
-    symbols.push({img:`assets/images/${i}.png`,color:color});
-    symbols.push({img:`assets/images/${i}.png`,color:color});
+  colors.forEach(color=>{
+    symbols.push({img:`assets/images/${i}.png`,color});
+    symbols.push({img:`assets/images/${i}.png`,color});
   });
 }
-symbols.sort(() => Math.random() - 0.5);
-const board = document.getElementById('board');
-let firstTile = null;
-let lock = false;
-let moves = 0;
-let matched = 0;
-let time = 0;
-let timerInterval = setInterval(()=>{ time++; document.getElementById('time').innerText = time+'s'; },1000);
-symbols.forEach((s,i)=>{
-  const tile = document.createElement('div');
-  tile.classList.add('tile');
-  tile.innerHTML = `
-    <div class="inner">
-      <div class="front"></div>
-      <div class="back" style="border-color:${s.color};">
-        <img src="${s.img}">
-      </div>
-    </div>
-  `;
-  tile.addEventListener('click',()=>{
-    if(lock || tile.classList.contains('flipped')) return;
-    tile.classList.add('flipped');
-    if(!firstTile){ firstTile = tile; }
-    else{
-      moves++;
-      document.getElementById('moves').innerText = moves;
-      if(tile.querySelector('img').src === firstTile.querySelector('img').src && tile.querySelector('.back').style.borderColor === firstTile.querySelector('.back').style.borderColor){
-        matched+=2;
-        tile.querySelector('.back').style.boxShadow = `0 0 20px ${s.color}, 0 0 40px ${s.color}, 0 0 60px ${s.color}`;
-        firstTile.querySelector('.back').style.boxShadow = `0 0 20px ${s.color}, 0 0 40px ${s.color}, 0 0 60px ${s.color}`;
-        firstTile=null;
-        if(matched===symbols.length){
-          clearInterval(timerInterval);
-          setTimeout(()=>{ alert('🎉 Wygrałeś! Czas: '+time+'s, Ruchy: '+moves); },300);
+symbols.sort(()=>Math.random()-0.5);
+
+const board=document.getElementById('board');
+let firstTile=null,lock=false,moves=0,matched=0,time=0;
+let timer=setInterval(()=>{time++;document.getElementById('time').innerText=time+'s';},1000);
+
+// Tworzymy klasyczny układ Mahjong (piramida 3-warstwowa)
+const layers=[
+  {countX:12,countY:6,offsetX:0,offsetY:0,z:0},
+  {countX:10,countY:4,offsetX:60,offsetY:40,z:1},
+  {countX:8,countY:2,offsetX:120,offsetY:80,z:2}
+];
+let idx=0;
+layers.forEach(layer=>{
+  for(let y=0;y<layer.countY;y++){
+    for(let x=0;x<layer.countX;x++){
+      if(idx>=symbols.length) break;
+      let s=symbols[idx];
+      const tile=document.createElement('div');
+      tile.classList.add('tile');
+      tile.style.left=`${x*62+layer.offsetX}px`;
+      tile.style.top=`${y*82+layer.offsetY}px`;
+      tile.style.zIndex=layer.z;
+      tile.dataset.layer=layer.z;
+      tile.dataset.x=x;
+      tile.dataset.y=y;
+
+      tile.innerHTML=`<div class="front"></div><div class="back" style="border-color:${s.color};"><img src="${s.img}"></div>`;
+
+      tile.addEventListener('click',()=>{
+        if(lock || tile.classList.contains('flipped')) return;
+        if(!isFree(tile)) return;
+        tile.classList.add('flipped');
+        if(!firstTile){firstTile=tile;}
+        else{
+          moves++;
+          document.getElementById('moves').innerText=moves;
+          if(tile.querySelector('img').src===firstTile.querySelector('img').src && tile.querySelector('.back').style.borderColor===firstTile.querySelector('.back').style.borderColor){
+            matched+=2;
+            glowTile(tile,s.color);
+            glowTile(firstTile,s.color);
+            firstTile=null;
+            if(matched>=symbols.length){
+              clearInterval(timer);
+              winAnimation();
+            }
+          } else{
+            lock=true;
+            setTimeout(()=>{ tile.classList.remove('flipped'); firstTile.classList.remove('flipped'); firstTile=null; lock=false;},700);
+          }
         }
-      } else{
-        lock=true;
-        setTimeout(()=>{ tile.classList.remove('flipped'); firstTile.classList.remove('flipped'); firstTile=null; lock=false; },700);
-      }
+      });
+      board.appendChild(tile);
+      idx++;
+    }
+  }
+});
+
+function isFree(tile){
+  // prosta logika: wolny, jeśli nie ma kafelka po lewej lub prawej na tej samej warstwie
+  const z=parseInt(tile.dataset.layer);
+  const x=parseInt(tile.dataset.x);
+  const y=parseInt(tile.dataset.y);
+  let tiles=document.querySelectorAll('.tile');
+  let freeLeft=true,freeRight=true;
+  tiles.forEach(t=>{
+    if(parseInt(t.dataset.layer)===z){
+      let tx=parseInt(t.dataset.x),ty=parseInt(t.dataset.y);
+      if(tx===x-1 && ty===y && !t.classList.contains('flipped')) freeLeft=false;
+      if(tx===x+1 && ty===y && !t.classList.contains('flipped')) freeRight=false;
     }
   });
-  board.appendChild(tile);
-});
+  return freeLeft || freeRight;
+}
+
+function glowTile(tile,color){
+  tile.querySelector('.back').style.boxShadow=`0 0 20px ${color},0 0 40px ${color},0 0 60px ${color}`;
+}
+
+function winAnimation(){
+  let tiles=document.querySelectorAll('.tile');
+  tiles.forEach((tile,i)=>{
+    setTimeout(()=>{ tile.style.transform='rotateY(360deg) scale(1.2)';},i*50);
+  });
+  setTimeout(()=>{ alert(`🎉 Wygrałeś! Czas: ${time}s, Ruchy: ${moves}`);},tiles.length*50+500);
+}
 </script>
 </body>
 </html>
