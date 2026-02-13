@@ -3,123 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mahjong Inventory - Nowa Logika</title>
+<title>Mahjong Pyramid Inventory</title>
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #0b0c10;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-#menu, #game {
-  width: 95vw;
-  max-width: 1200px;
-  text-align: center;
-}
-#menu button {
-  margin: 10px;
-  padding: 1em 2em;
-  font-size: 1.2em;
-  border: none;
-  border-radius: 8px;
-  background: #222;
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-#menu button:hover {
-  background: #00f0ff;
-  color: #000;
-}
-.board {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-  gap: 8px;
-  margin-top: 20px;
-}
-.tile {
-  width: 100%;
-  aspect-ratio: 1/1;
-  background: #222;
-  border: 3px solid #fff;
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-.tile img {
-  width: 80%;
-  height: 80%;
-  object-fit: contain;
-}
-.tile:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 20px #0ff, 0 0 40px #ff0, 0 0 60px #f0f;
-}
-#inventory {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 20px;
-}
-.slot {
-  width: 60px;
-  height: 60px;
-  background: #111;
-  border: 3px solid #0ff;
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.slot img {
-  width: 80%;
-  height: 80%;
-  object-fit: contain;
-}
-#score {
-  margin-top: 20px;
-  font-size: 1.5em;
-}
+body { margin:0; font-family: Arial,sans-serif; background:#0b0c10; color:#fff; display:flex; flex-direction:column; align-items:center; }
+#menu, #game { width:95vw; max-width:1200px; text-align:center; }
+#menu button { margin:10px; padding:1em 2em; font-size:1.2em; border:none; border-radius:8px; background:#222; color:#fff; cursor:pointer; transition:0.3s; }
+#menu button:hover { background:#00f0ff; color:#000; }
+.board { position:relative; margin-top:20px; width:95vw; max-width:1200px; aspect-ratio:1.7/1; }
+.tile { position:absolute; width:60px; height:80px; border-radius:8px; border:3px solid #fff; background:#222; display:flex; justify-content:center; align-items:center; cursor:pointer; transition:all 0.3s ease; transform-style:preserve-3d; }
+.tile img { width:80%; height:80%; object-fit:contain; }
+.tile.flippable:hover { transform: scale(1.1); box-shadow:0 0 20px #0ff,0 0 40px #ff0,0 0 60px #f0f; }
+.tile.flipped { transform:rotateY(180deg); }
+#inventory { display:flex; justify-content:center; gap:10px; margin-top:20px; }
+.slot { width:60px; height:60px; background:#111; border:3px solid #0ff; border-radius:8px; display:flex; justify-content:center; align-items:center; }
+.slot img { width:80%; height:80%; object-fit:contain; }
+#score { margin-top:20px; font-size:1.5em; }
 </style>
 </head>
 <body>
 <div id="menu">
-  <h1>Mahjong Inventory</h1>
-  <p>Wybierz poziom trudności:</p>
-  <button data-level="easy">Łatwy</button>
-  <button data-level="classic">Klasyczny</button>
-  <button data-level="medium">Średni</button>
-  <button data-level="hard">Trudny</button>
-  <button data-level="extreme">Ekstremalny</button>
-  <button data-level="pro">Zawodowy</button>
-  <button data-level="record">Rekordowy</button>
+<h1>Mahjong Pyramid Inventory</h1>
+<p>Wybierz poziom trudności:</p>
+<button data-level="record">Rekordowy</button>
+<button data-level="pro">Zawodowy</button>
+<button data-level="extreme">Ekstremalny</button>
+<button data-level="hard">Trudny</button>
+<button data-level="medium">Średni</button>
+<button data-level="classic">Klasyczny</button>
+<button data-level="easy">Łatwy</button>
 </div>
 <div id="game" style="display:none;">
-  <div id="score">Score: 0</div>
-  <div class="board" id="board"></div>
-  <div id="inventory">
-    <div class="slot"></div>
-    <div class="slot"></div>
-    <div class="slot"></div>
-    <div class="slot"></div>
-  </div>
+<div id="score">Score: 0</div>
+<div class="board" id="board"></div>
+<div id="inventory">
+<div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+</div>
 </div>
 <script>
-const levels = {easy:8, classic:16, medium:24, hard:32, extreme:48, pro:64, record:72};
-let boardTiles = [], inventory = [], score = 0;
-const boardEl = document.getElementById('board');
-const inventoryEls = document.querySelectorAll('.slot');
-const scoreEl = document.getElementById('score');
+const levels = {record:64, pro:32, extreme:16, hard:8, medium:4, classic:2, easy:1};
+const colors = ['#ff073a','#00f0ff','#ffff00','#00ff3c'];
+let symbols=[], inventory=[], score=0;
+const boardEl=document.getElementById('board');
+const inventoryEls=document.querySelectorAll('.slot');
+const scoreEl=document.getElementById('score');
 
-// Menu start
+// Menu
 document.querySelectorAll('#menu button').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
+  btn.addEventListener('click',()=>{
     startGame(btn.dataset.level);
     document.getElementById('menu').style.display='none';
     document.getElementById('game').style.display='block';
@@ -127,63 +57,62 @@ document.querySelectorAll('#menu button').forEach(btn=>{
 });
 
 function startGame(level){
-  const count = levels[level];
-  boardTiles=[];
-  inventory=[];
-  score=0;
-  scoreEl.innerText='Score: 0';
-  boardEl.innerHTML='';
-  inventoryEls.forEach(slot=>slot.innerHTML='');
-  // generowanie par kafelków
-  const pairs = [];
-  for(let i=1;i<=count/2;i++) pairs.push({id:i, img:`assets/images/${i}.png`}, {id:i, img:`assets/images/${i}.png`});
+  const totalImages=levels[level];
+  symbols=[]; inventory=[]; score=0; scoreEl.innerText='Score: 0';
+  boardEl.innerHTML=''; inventoryEls.forEach(slot=>slot.innerHTML='');
+  // Tworzenie par 4 kolory
+  let pairs=[];
+  for(let i=1;i<=totalImages;i++){
+    colors.forEach(color=>{
+      pairs.push({id:i, color:color, img:`assets/images/${i}.png`}, {id:i, color:color, img:`assets/images/${i}.png`});
+    });
+  }
   pairs.sort(()=>Math.random()-0.5);
-  pairs.forEach(p=>{
-    const tile=document.createElement('div');
-    tile.classList.add('tile');
-    tile.dataset.id=p.id;
-    tile.innerHTML=`<img src='${p.img}'>`;
-    tile.addEventListener('click', ()=>pickTile(tile));
-    boardEl.appendChild(tile);
-    boardTiles.push(tile);
-  });
+  // Układ piramidy 3 warstwy
+  const rows=3;
+  const colsPerRow=[12,10,8];
+  let idx=0;
+  for(let r=0;r<rows;r++){
+    const cols=colsPerRow[r];
+    const offsetX=(boardEl.clientWidth - cols*60)/2;
+    const offsetY=r*30;
+    for(let c=0;c<cols;c++){
+      if(idx>=pairs.length) break;
+      let p=pairs[idx];
+      const tile=document.createElement('div');
+      tile.classList.add('tile','flippable');
+      tile.style.left=(c*60 + offsetX)+'px';
+      tile.style.top=(r*30 + offsetY)+'px';
+      tile.dataset.id=p.id; tile.dataset.color=p.color;
+      tile.innerHTML=`<img src='${p.img}'>`;
+      tile.addEventListener('click',()=>pickTile(tile));
+      boardEl.appendChild(tile);
+      idx++;
+    }
+  }
 }
 
 function pickTile(tile){
-  if(inventory.length>=4) {
-    alert('Ekwipunek pełny! Gra się resetuje.');
-    startGame('classic');
-    return;
-  }
+  if(inventory.length>=4){ alert('Ekwipunek pełny! Gra resetuje się.'); startGame('classic'); return; }
   tile.style.visibility='hidden';
-  const slot = inventoryEls[inventory.length];
-  slot.innerHTML = tile.innerHTML;
-  inventory.push({id:tile.dataset.id, tile:tile});
-
+  const slot=inventoryEls[inventory.length];
+  slot.innerHTML=tile.innerHTML;
+  inventory.push({id:tile.dataset.id,color:tile.dataset.color,tile:tile});
   checkMatch();
 }
 
 function checkMatch(){
   for(let i=0;i<inventory.length;i++){
     for(let j=i+1;j<inventory.length;j++){
-      if(inventory[i].id===inventory[j].id){
-        // dopasowanie
-        score+=200;
-        scoreEl.innerText='Score: '+score;
-        inventory[i].tile.remove();
-        inventory[j].tile.remove();
-        inventoryEls[i].innerHTML='';
-        inventoryEls[j].innerHTML='';
-        inventory.splice(j,1);
-        inventory.splice(i,1);
-        return;
+      if(inventory[i].id===inventory[j].id && inventory[i].color===inventory[j].color){
+        score+=200; scoreEl.innerText='Score: '+score;
+        inventory[i].tile.remove(); inventory[j].tile.remove();
+        inventoryEls[i].innerHTML=''; inventoryEls[j].innerHTML='';
+        inventory.splice(j,1); inventory.splice(i,1); return;
       }
     }
   }
-  if(inventory.length===4){
-    alert('Ekwipunek pełny! Gra się resetuje.');
-    startGame('classic');
-  }
+  if(inventory.length===4){ alert('Ekwipunek pełny! Gra resetuje się.'); startGame('classic'); }
 }
 </script>
 </body>
