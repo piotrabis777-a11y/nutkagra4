@@ -35,9 +35,15 @@ body {
   transition: transform 0.6s ease, box-shadow 0.3s ease;
   transform-style: preserve-3d;
 }
-.tile:hover:not(.flipped) {
+.tile.flippable:hover {
   transform: scale(1.1);
-  box-shadow: 0 0 20px #fff, 0 0 40px #0ff, 0 0 60px #f0f;
+  box-shadow: 0 0 25px #fff, 0 0 50px #0ff, 0 0 75px #f0f;
+  animation: pulse 1.2s infinite;
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 15px #fff,0 0 30px #0ff,0 0 45px #f0f; }
+  50% { box-shadow: 0 0 25px #fff,0 0 50px #0ff,0 0 75px #f0f; }
+  100% { box-shadow: 0 0 15px #fff,0 0 30px #0ff,0 0 45px #f0f; }
 }
 .front, .back {
   position: absolute;
@@ -67,11 +73,6 @@ body {
 .tile.flipped {
   transform: rotateY(180deg);
 }
-@keyframes glow {
-  0% { box-shadow: 0 0 10px #fff; }
-  50% { box-shadow: 0 0 25px #fff, 0 0 50px #0ff, 0 0 75px #f0f; }
-  100% { box-shadow: 0 0 10px #fff; }
-}
 </style>
 </head>
 <body>
@@ -96,7 +97,6 @@ const board = document.getElementById('board');
 let firstTile=null, lock=false, moves=0, matched=0, time=0;
 let timer=setInterval(()=>{time++;document.getElementById('time').innerText=time+'s';},1000);
 
-// Ustawiamy klasyczny układ piramidy 3-warstwowej
 const layers=[
   {countX:12,countY:6,offsetX:0,offsetY:0,z:0},
   {countX:10,countY:4,offsetX:60,offsetY:40,z:1},
@@ -124,6 +124,7 @@ layers.forEach(layer=>{
         if(lock || tile.classList.contains('flipped') || tile.dataset.matched==='true') return;
         if(!isFree(tile)) return;
         tile.classList.add('flipped');
+        tile.classList.remove('flippable');
         if(!firstTile){firstTile=tile;}
         else{
           moves++;
@@ -144,6 +145,8 @@ layers.forEach(layer=>{
             setTimeout(()=>{
               tile.classList.remove('flipped');
               firstTile.classList.remove('flipped');
+              firstTile.classList.add('flippable');
+              tile.classList.add('flippable');
               firstTile=null;
               lock=false;
             },700);
@@ -156,8 +159,12 @@ layers.forEach(layer=>{
   }
 });
 
+// dodaj klasę flippable dla wszystkich wolnych kafelków
+document.querySelectorAll('.tile').forEach(t=>{
+  if(isFree(t)) t.classList.add('flippable');
+});
+
 function isFree(tile){
-  // wolny jeśli brak kafelków po lewej lub prawej na tej samej warstwie i brak nakrycia
   const z=parseInt(tile.dataset.layer);
   const x=parseInt(tile.dataset.x);
   const y=parseInt(tile.dataset.y);
@@ -170,7 +177,6 @@ function isFree(tile){
       if(tx===x+1 && ty===y && t.dataset.matched==='false') freeRight=false;
     }
     if(tz>z){
-      // sprawdź czy tile jest nad tym kafelkiem
       if(tx>=x && tx<=x && ty>=y && ty<=y && t.dataset.matched==='false') freeTop=false;
     }
   });
