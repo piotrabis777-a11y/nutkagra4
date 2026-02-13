@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mahjong Pyramid Pro FIX</title>
+<title>Mahjong Pyramid FINAL</title>
 <style>
 body{
   margin:0;
   font-family:Arial,sans-serif;
-  background:linear-gradient(rgba(0,0,0,.6),rgba(0,0,0,.6)),
-  url('https://images.unsplash.com/photo-1601758125946-6ec2ef64daf8?q=80&w=1200');
+  background:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)),
+  url('https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1400');
   background-size:cover;
   background-position:center;
   color:#fff;
@@ -17,86 +17,43 @@ body{
   flex-direction:column;
   align-items:center;
 }
-
-#menu,#game{
-  width:100vw;
-  max-width:1200px;
-  text-align:center;
-}
-
+#menu,#game{ width:100%; text-align:center; }
 #menu button{
-  margin:8px;
-  padding:14px 24px;
-  font-size:1.1rem;
-  border:none;
-  border-radius:10px;
-  background:#222;
-  color:#fff;
-  cursor:pointer;
+  margin:8px; padding:14px 24px; font-size:1rem;
+  border:none; border-radius:10px; background:#222; color:#fff; cursor:pointer;
 }
-
-#menu button:hover{
-  background:#00e5ff;
-  color:#000;
-}
-
+#menu button:hover{ background:#00e5ff; color:#000; }
 .board{
   position:relative;
   width:95vmin;
   height:95vmin;
   margin:20px auto;
 }
-
 .tile{
   position:absolute;
   border-radius:10px;
   display:flex;
   justify-content:center;
   align-items:center;
-  background:#ffffff;
-  transition:all .25s ease;
-}
-
-.tile img{
-  width:80%;
-  height:80%;
-  object-fit:contain;
-}
-
-.tile:hover{
-  transform:scale(1.08);
-  box-shadow:0 0 25px currentColor;
-}
-
-#inventory{
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  margin-bottom:30px;
-}
-
-.slot{
-  width:60px;
-  height:60px;
   background:#fff;
-  border:3px solid #00e5ff;
-  border-radius:8px;
-  display:flex;
-  justify-content:center;
-  align-items:center;
+  transition:.25s ease;
 }
-
-#score{
-  font-size:1.4rem;
-  margin-top:10px;
+.tile img{ width:80%; height:80%; object-fit:contain; }
+.tile:hover{ transform:scale(1.07); box-shadow:0 0 25px currentColor; }
+.tile.blocked{ opacity:.5; cursor:not-allowed; }
+#inventory{ display:flex; justify-content:center; gap:10px; margin-bottom:30px; }
+.slot{
+  width:60px; height:60px; background:#fff;
+  border:3px solid #00e5ff; border-radius:8px;
+  display:flex; justify-content:center; align-items:center;
 }
+#score{ font-size:1.3rem; margin-top:10px; }
 </style>
 </head>
 <body>
 
 <div id="menu">
 <h1>Mahjong Pyramid</h1>
-<p>Wybierz poziom:</p>
 <button data-level="pro">Zawodowy</button>
 <button data-level="extreme">Ekstremalny</button>
 <button data-level="hard">Trudny</button>
@@ -109,10 +66,8 @@ body{
 <div id="score">Score: 0</div>
 <div class="board" id="board"></div>
 <div id="inventory">
-<div class="slot"></div>
-<div class="slot"></div>
-<div class="slot"></div>
-<div class="slot"></div>
+<div class="slot"></div><div class="slot"></div>
+<div class="slot"></div><div class="slot"></div>
 </div>
 </div>
 
@@ -125,49 +80,67 @@ const levels={
   easy:[3,2]
 };
 
+const colors=["#ff3b3b","#00e5ff","#ffff00","#00ff6a","#ff00ff","#ff8800","#0088ff","#7dff00"];
+
+let board=document.getElementById("board");
+let slots=document.querySelectorAll(".slot");
+let scoreEl=document.getElementById("score");
+let currentLevel=null;
+let tilesData=[];
 let inventory=[];
 let score=0;
-const board=document.getElementById("board");
-const slots=document.querySelectorAll(".slot");
-const scoreEl=document.getElementById("score");
 
-// START
+// PRELOAD 1-16 PNG
+let preloadPromises=[];
+for(let i=1;i<=16;i++){
+  preloadPromises.push(new Promise(res=>{
+    let img=new Image();
+    img.src=`assets/images/${i}.png`;
+    img.onload=res; img.onerror=res;
+  }));
+}
 
-document.querySelectorAll("#menu button").forEach(btn=>{
-  btn.onclick=()=>{
-    document.getElementById("menu").style.display="none";
-    document.getElementById("game").style.display="block";
-    setTimeout(()=>startGame(btn.dataset.level),50);
-  }
+Promise.all(preloadPromises).then(()=>{
+  document.querySelectorAll("#menu button").forEach(btn=>{
+    btn.onclick=()=>{
+      currentLevel=btn.dataset.level;
+      document.getElementById("menu").style.display="none";
+      document.getElementById("game").style.display="block";
+      setTimeout(()=>startGame(currentLevel),50);
+    }
+  });
+});
+
+window.addEventListener("resize",()=>{
+  if(currentLevel) startGame(currentLevel);
 });
 
 function startGame(level){
   board.innerHTML="";
   inventory=[];
+  tilesData=[];
   score=0;
   scoreEl.innerText="Score: 0";
   slots.forEach(s=>s.innerHTML="");
 
   let layers = level==="classic" ? randomLayers() : levels[level];
 
+  let totalTiles = layers.reduce((sum,l)=>sum+l*l,0);
+  if(level==="pro") totalTiles=128; // dokładnie 128
+  if(totalTiles%2!==0) totalTiles--;
+
   let maxSize=Math.max(...layers);
   let tileSize=Math.floor(board.clientWidth/(maxSize+1));
 
-  let colors=["#ff3b3b","#00e5ff","#ffff00","#00ff6a","#ff00ff","#ff8800","#00ffff","#7dff00","#ff0088","#0088ff","#ff4444","#44ff44","#4444ff"];
-
-  let tiles=[];
-  let id=0;
-
-  layers.forEach(size=>{
-    for(let i=0;i<size*size/2;i++){
-      let color=colors[(id+i)%colors.length];
-      tiles.push({id:id,img:`https://via.placeholder.com/100?text=${id+1}`,color});
-      tiles.push({id:id,img:`https://via.placeholder.com/100?text=${id+1}`,color});
-      id++;
-    }
-  });
-
-  tiles.sort(()=>Math.random()-0.5);
+  let pairCount=totalTiles/2;
+  let pairs=[];
+  for(let i=0;i<pairCount;i++){
+    let imgIndex=(i%16)+1;
+    let color=colors[i%8];
+    pairs.push({id:i,img:imgIndex,color});
+    pairs.push({id:i,img:imgIndex,color});
+  }
+  pairs.sort(()=>Math.random()-0.5);
 
   let index=0;
   layers.forEach((size,layerIndex)=>{
@@ -176,48 +149,62 @@ function startGame(level){
 
     for(let r=0;r<size;r++){
       for(let c=0;c<size;c++){
-        if(index>=tiles.length) return;
-
-        let t=tiles[index];
+        if(index>=pairs.length) return;
+        let p=pairs[index];
         let div=document.createElement("div");
         div.className="tile";
         div.style.width=tileSize+"px";
         div.style.height=tileSize+"px";
         div.style.left=(offsetX+c*tileSize)+"px";
         div.style.top=(offsetY+r*tileSize)+"px";
-        div.style.border="4px solid "+t.color;
-        div.style.color=t.color;
-        div.dataset.id=t.id;
-        div.innerHTML=`<img src="${t.img}">`;
+        div.style.border="4px solid "+p.color;
+        div.style.color=p.color;
+        div.dataset.id=p.id;
+        div.dataset.layer=layerIndex;
+        div.innerHTML=`<img src='assets/images/${p.img}.png'>`;
         div.onclick=()=>pick(div);
         board.appendChild(div);
+        tilesData.push(div);
         index++;
       }
     }
   });
+  updateBlocked();
 }
 
 function randomLayers(){
   let count=Math.floor(Math.random()*3)+2;
   let arr=[];
-  for(let i=0;i<count;i++){
-    arr.push(Math.floor(Math.random()*5)+2);
-  }
+  for(let i=0;i<count;i++) arr.push(Math.floor(Math.random()*5)+2);
   return arr;
 }
 
+function updateBlocked(){
+  tilesData.forEach(t=>{
+    t.classList.remove("blocked");
+    let layer=parseInt(t.dataset.layer);
+    let rect=t.getBoundingClientRect();
+    for(let other of tilesData){
+      if(other===t) continue;
+      if(parseInt(other.dataset.layer)>layer && other.style.visibility!=="hidden"){
+        let r2=other.getBoundingClientRect();
+        if(!(rect.right<r2.left||rect.left>r2.right||rect.bottom<r2.top||rect.top>r2.bottom)){
+          t.classList.add("blocked");
+        }
+      }
+    }
+  });
+}
+
 function pick(tile){
-  if(inventory.length>=4){
-    alert("Ekwipunek pełny — reset!");
-    startGame("pro");
-    return;
-  }
+  if(tile.classList.contains("blocked")) return;
+  if(inventory.length>=4){ alert("Ekwipunek pełny — reset"); startGame(currentLevel); return; }
 
   tile.style.visibility="hidden";
-  slots[inventory.length].innerHTML=tile.innerHTML;
   inventory.push(tile);
-
+  slots[inventory.length-1].innerHTML=tile.innerHTML;
   checkMatch();
+  updateBlocked();
 }
 
 function checkMatch(){
@@ -230,6 +217,7 @@ function checkMatch(){
         slots.forEach(s=>s.innerHTML="");
         score+=200;
         scoreEl.innerText="Score: "+score;
+        updateBlocked();
         return;
       }
     }
