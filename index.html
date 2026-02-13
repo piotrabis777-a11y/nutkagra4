@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mahjong Pyramid Inventory Neon</title>
+<title>Mahjong Pyramid Inventory Neon Pro</title>
 <style>
 body { margin:0; font-family: Arial,sans-serif; background:#0b0c10; color:#fff; display:flex; flex-direction:column; align-items:center; }
 #menu, #game { width:95vw; max-width:1200px; text-align:center; }
@@ -22,7 +22,7 @@ body { margin:0; font-family: Arial,sans-serif; background:#0b0c10; color:#fff; 
 </head>
 <body>
 <div id="menu">
-<h1>Mahjong Pyramid Inventory Neon</h1>
+<h1>Mahjong Pyramid Inventory Neon Pro</h1>
 <p>Wybierz poziom trudności:</p>
 <button data-level="record">Rekordowy</button>
 <button data-level="pro">Zawodowy</button>
@@ -60,17 +60,21 @@ function startGame(level){
   const totalImages=levels[level];
   symbols=[]; inventory=[]; score=0; scoreEl.innerText='Score: 0';
   boardEl.innerHTML=''; inventoryEls.forEach(slot=>slot.innerHTML='');
-  // Tworzenie par 4 kolory
+  // Tworzenie 4 par w różnych kolorach, 2 razy powtarzamy dla rekordowego poziomu
   let pairs=[];
-  for(let i=1;i<=totalImages;i++){
-    colors.forEach(color=>{
-      pairs.push({id:i,color:color,img:`assets/images/${i}.png`}, {id:i,color:color,img:`assets/images/${i}.png`});
-    });
+  for(let repeat=0; repeat<2; repeat++){
+    for(let i=1;i<=totalImages;i++){
+      colors.forEach(color=>{
+        pairs.push({id:i,color:color,img:`assets/images/${i}.png`}, {id:i,color:color,img:`assets/images/${i}.png`});
+      });
+    }
   }
   pairs.sort(()=>Math.random()-0.5);
 
-  // Piramida 3 warstwy
-  const rows=3; const colsPerRow=[12,10,8]; let idx=0;
+  // Piramida 3 warstwy dynamiczna
+  const rows=3;
+  const colsPerRow=[Math.ceil(pairs.length/rows/1.5), Math.ceil(pairs.length/rows/1.8), Math.ceil(pairs.length/rows/2.1)];
+  let idx=0;
   for(let r=0;r<rows;r++){
     const cols=colsPerRow[r];
     const offsetX=(boardEl.clientWidth - cols*60)/2;
@@ -93,7 +97,7 @@ function startGame(level){
 }
 
 function pickTile(tile){
-  if(inventory.length>=4){ alert('Ekwipunek pełny! Gra resetuje się.'); startGame('classic'); return; }
+  if(inventory.length>=4){ alert('Ekwipunek pełny! Gra resetuje się.'); startGame('record'); return; }
   tile.style.visibility='hidden';
   const slot=inventoryEls[inventory.length];
   slot.innerHTML=tile.innerHTML;
@@ -112,7 +116,7 @@ function checkMatch(){
       }
     }
   }
-  if(inventory.length===4){ alert('Ekwipunek pełny! Gra resetuje się.'); startGame('classic'); }
+  if(inventory.length===4){ alert('Ekwipunek pełny! Gra resetuje się.'); startGame('record'); }
 }
 </script>
 </body>
