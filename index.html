@@ -3,135 +3,143 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Memory Game</title>
-
+<title>Mahjong Neon - 64 pary</title>
 <style>
 body {
-    margin: 0;
-    background: linear-gradient(135deg, #1e1e2f, #2c2c54);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    font-family: Arial, sans-serif;
+  margin: 0;
+  background: #0b0c10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  color: #fff;
 }
-
+#info {
+  display: flex;
+  gap: 20px;
+  margin: 20px;
+  font-size: 18px;
+}
 .board {
-    display: grid;
-    grid-template-columns: repeat(8, 100px);
-    gap: 12px;
-    perspective: 1000px;
+  display: grid;
+  grid-template-columns: repeat(16, 60px);
+  grid-gap: 8px;
+  perspective: 1000px;
 }
-
 .tile {
-    width: 100px;
-    height: 140px;
-    cursor: pointer;
+  width: 60px;
+  height: 80px;
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
 }
-
+.tile:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px #fff, 0 0 30px #0ff, 0 0 45px #f0f;
+}
 .inner {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    transition: transform 0.6s;
-    transform-style: preserve-3d;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
 }
-
 .tile.flipped .inner {
-    transform: rotateY(180deg);
+  transform: rotateY(180deg);
 }
-
 .front, .back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 12px;
-    backface-visibility: hidden;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  backface-visibility: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
-
 .front {
-    background: linear-gradient(145deg, #444, #222);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  background: #222;
+  box-shadow: 0 0 10px #000 inset;
 }
-
 .back {
-    transform: rotateY(180deg);
-    background: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  transform: rotateY(180deg);
+  background: #111;
+  box-shadow: 0 0 10px #000;
+  border: 3px solid;
+  animation: glow 1.5s infinite alternate;
 }
-
 .back img {
-    width: 90%;
-    height: 90%;
-    object-fit: contain;
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+}
+@keyframes glow {
+  0% { box-shadow: 0 0 5px #fff; }
+  50% { box-shadow: 0 0 15px #fff, 0 0 25px #0ff, 0 0 35px #f0f; }
+  100% { box-shadow: 0 0 5px #fff; }
 }
 </style>
 </head>
 <body>
-
+<div id="info">
+  <div>Czas: <span id="time">0s</span></div>
+  <div>Ruchy: <span id="moves">0</span></div>
+</div>
 <div class="board" id="board"></div>
-
 <script>
-const totalPairs = 16;
+const totalImages = 16;
+const colors = ['#ff073a','#00f0ff','#ffff00','#00ff3c'];
 let symbols = [];
-
-// automatyczne wczytanie 1.png → 16.png
-for (let i = 1; i <= totalPairs; i++) {
-    let path = `assets/images/${i}.png`;
-    symbols.push(path);
-    symbols.push(path);
+for(let i=1;i<=totalImages;i++){
+  colors.forEach(color => {
+    symbols.push({img:`assets/images/${i}.png`,color:color});
+    symbols.push({img:`assets/images/${i}.png`,color:color});
+  });
 }
-
-// tasowanie
 symbols.sort(() => Math.random() - 0.5);
-
-const board = document.getElementById("board");
+const board = document.getElementById('board');
 let firstTile = null;
 let lock = false;
-
-symbols.forEach((imgSrc) => {
-    const tile = document.createElement("div");
-    tile.classList.add("tile");
-
-    tile.innerHTML = `
-        <div class="inner">
-            <div class="front"></div>
-            <div class="back">
-                <img src="${imgSrc}">
-            </div>
-        </div>
-    `;
-
-    tile.addEventListener("click", () => {
-        if (lock || tile.classList.contains("flipped")) return;
-
-        tile.classList.add("flipped");
-
-        if (!firstTile) {
-            firstTile = tile;
-        } else {
-            if (
-                firstTile.querySelector("img").src ===
-                tile.querySelector("img").src
-            ) {
-                firstTile = null;
-            } else {
-                lock = true;
-                setTimeout(() => {
-                    tile.classList.remove("flipped");
-                    firstTile.classList.remove("flipped");
-                    firstTile = null;
-                    lock = false;
-                }, 800);
-            }
+let moves = 0;
+let matched = 0;
+let time = 0;
+let timerInterval = setInterval(()=>{ time++; document.getElementById('time').innerText = time+'s'; },1000);
+symbols.forEach((s,i)=>{
+  const tile = document.createElement('div');
+  tile.classList.add('tile');
+  tile.innerHTML = `
+    <div class="inner">
+      <div class="front"></div>
+      <div class="back" style="border-color:${s.color};">
+        <img src="${s.img}">
+      </div>
+    </div>
+  `;
+  tile.addEventListener('click',()=>{
+    if(lock || tile.classList.contains('flipped')) return;
+    tile.classList.add('flipped');
+    if(!firstTile){ firstTile = tile; }
+    else{
+      moves++;
+      document.getElementById('moves').innerText = moves;
+      if(tile.querySelector('img').src === firstTile.querySelector('img').src && tile.querySelector('.back').style.borderColor === firstTile.querySelector('.back').style.borderColor){
+        matched+=2;
+        tile.querySelector('.back').style.boxShadow = `0 0 20px ${s.color}, 0 0 40px ${s.color}, 0 0 60px ${s.color}`;
+        firstTile.querySelector('.back').style.boxShadow = `0 0 20px ${s.color}, 0 0 40px ${s.color}, 0 0 60px ${s.color}`;
+        firstTile=null;
+        if(matched===symbols.length){
+          clearInterval(timerInterval);
+          setTimeout(()=>{ alert('🎉 Wygrałeś! Czas: '+time+'s, Ruchy: '+moves); },300);
         }
-    });
-
-    board.appendChild(tile);
+      } else{
+        lock=true;
+        setTimeout(()=>{ tile.classList.remove('flipped'); firstTile.classList.remove('flipped'); firstTile=null; lock=false; },700);
+      }
+    }
+  });
+  board.appendChild(tile);
 });
 </script>
-
 </body>
 </html>
