@@ -3,141 +3,237 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mahjong Pyramid Inventory Pro</title>
+<title>Mahjong Pyramid Pro FIX</title>
 <style>
-body { margin:0; font-family: Arial,sans-serif; background:url('assets/images/mahjong_bg.jpg') no-repeat center center fixed; background-size:cover; color:#fff; display:flex; flex-direction:column; align-items:center; }
-#menu, #game { width:95vw; max-width:1200px; text-align:center; }
-#menu button { margin:10px; padding:1em 2em; font-size:1.2em; border:none; border-radius:8px; background:#222; color:#fff; cursor:pointer; transition:0.3s; }
-#menu button:hover { background:#00f0ff; color:#000; }
-.board { position:relative; margin-top:20px; width:95vw; height:95vw; max-width:1200px; max-height:1200px; }
-.tile { position:absolute; border-radius:8px; display:flex; justify-content:center; align-items:center; cursor:pointer; transition:all 0.3s ease; transform-style:preserve-3d; background:#fff; }
-.tile img { width:80%; height:80%; object-fit:contain; }
-.tile.flippable:hover { transform: scale(1.1); box-shadow:0 0 20px #0ff,0 0 40px #ff0,0 0 60px #f0f; }
-.tile.flipped { transform:rotateY(180deg); }
-#inventory { display:flex; justify-content:center; gap:10px; margin-top:20px; }
-.slot { width:60px; height:60px; background:#fff; border:3px solid #0ff; border-radius:8px; display:flex; justify-content:center; align-items:center; }
-.slot img { width:80%; height:80%; object-fit:contain; }
-#score { margin-top:20px; font-size:1.5em; }
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:linear-gradient(rgba(0,0,0,.6),rgba(0,0,0,.6)),
+  url('https://images.unsplash.com/photo-1601758125946-6ec2ef64daf8?q=80&w=1200');
+  background-size:cover;
+  background-position:center;
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+#menu,#game{
+  width:100vw;
+  max-width:1200px;
+  text-align:center;
+}
+
+#menu button{
+  margin:8px;
+  padding:14px 24px;
+  font-size:1.1rem;
+  border:none;
+  border-radius:10px;
+  background:#222;
+  color:#fff;
+  cursor:pointer;
+}
+
+#menu button:hover{
+  background:#00e5ff;
+  color:#000;
+}
+
+.board{
+  position:relative;
+  width:95vmin;
+  height:95vmin;
+  margin:20px auto;
+}
+
+.tile{
+  position:absolute;
+  border-radius:10px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#ffffff;
+  transition:all .25s ease;
+}
+
+.tile img{
+  width:80%;
+  height:80%;
+  object-fit:contain;
+}
+
+.tile:hover{
+  transform:scale(1.08);
+  box-shadow:0 0 25px currentColor;
+}
+
+#inventory{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:30px;
+}
+
+.slot{
+  width:60px;
+  height:60px;
+  background:#fff;
+  border:3px solid #00e5ff;
+  border-radius:8px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+#score{
+  font-size:1.4rem;
+  margin-top:10px;
+}
 </style>
 </head>
 <body>
+
 <div id="menu">
-<h1>Mahjong Pyramid Inventory Pro</h1>
-<p>Wybierz poziom trudności:</p>
+<h1>Mahjong Pyramid</h1>
+<p>Wybierz poziom:</p>
 <button data-level="pro">Zawodowy</button>
 <button data-level="extreme">Ekstremalny</button>
 <button data-level="hard">Trudny</button>
 <button data-level="medium">Średni</button>
-<button data-level="classic">Klasyczny losowy</button>
+<button data-level="classic">Klasyczny</button>
 <button data-level="easy">Łatwy</button>
 </div>
+
 <div id="game" style="display:none;">
 <div id="score">Score: 0</div>
 <div class="board" id="board"></div>
 <div id="inventory">
-<div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
+<div class="slot"></div>
+<div class="slot"></div>
+<div class="slot"></div>
+<div class="slot"></div>
 </div>
 </div>
+
 <script>
-const levelLayers = {
+const levels={
   pro:[7,6,5,4,3],
   extreme:[6,5,4,3],
   hard:[5,4,3,2],
   medium:[4,3,2],
-  classic:[],
   easy:[3,2]
 };
-const baseColors=['#ff073a','#00f0ff','#ffff00','#00ff3c','#ff00f0','#ff7f00','#00ffff','#7fff00','#ff7700','#00ff77'];
-let symbols=[], inventory=[], score=0;
-const boardEl=document.getElementById('board');
-const inventoryEls=document.querySelectorAll('.slot');
-const scoreEl=document.getElementById('score');
 
-// Menu start
-document.querySelectorAll('#menu button').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    startGame(btn.dataset.level);
-    document.getElementById('menu').style.display='none';
-    document.getElementById('game').style.display='block';
-  });
+let inventory=[];
+let score=0;
+const board=document.getElementById("board");
+const slots=document.querySelectorAll(".slot");
+const scoreEl=document.getElementById("score");
+
+// START
+
+document.querySelectorAll("#menu button").forEach(btn=>{
+  btn.onclick=()=>{
+    document.getElementById("menu").style.display="none";
+    document.getElementById("game").style.display="block";
+    setTimeout(()=>startGame(btn.dataset.level),50);
+  }
 });
 
 function startGame(level){
-  inventory=[]; score=0; scoreEl.innerText='Score: 0'; boardEl.innerHTML=''; inventoryEls.forEach(slot=>slot.innerHTML='');
-  let layers=levelLayers[level];
-  if(level==='classic'){
-    const numLayers=Math.floor(Math.random()*3)+2;
-    layers=[];
-    for(let i=0;i<numLayers;i++) layers.push(Math.floor(Math.random()*5)+2);
-  }
-  let pairs=[];
-  let colorIndex=0;
-  layers.forEach(layerSize=>{
-    for(let i=0;i<layerSize*layerSize/2;i++){
-      const color=baseColors[colorIndex%baseColors.length]; colorIndex++;
-      pairs.push({id:i,color:color,img:`assets/images/${i+1}.png`}, {id:i,color:color,img:`assets/images/${i+1}.png`});
+  board.innerHTML="";
+  inventory=[];
+  score=0;
+  scoreEl.innerText="Score: 0";
+  slots.forEach(s=>s.innerHTML="");
+
+  let layers = level==="classic" ? randomLayers() : levels[level];
+
+  let maxSize=Math.max(...layers);
+  let tileSize=Math.floor(board.clientWidth/(maxSize+1));
+
+  let colors=["#ff3b3b","#00e5ff","#ffff00","#00ff6a","#ff00ff","#ff8800","#00ffff","#7dff00","#ff0088","#0088ff","#ff4444","#44ff44","#4444ff"];
+
+  let tiles=[];
+  let id=0;
+
+  layers.forEach(size=>{
+    for(let i=0;i<size*size/2;i++){
+      let color=colors[(id+i)%colors.length];
+      tiles.push({id:id,img:`https://via.placeholder.com/100?text=${id+1}`,color});
+      tiles.push({id:id,img:`https://via.placeholder.com/100?text=${id+1}`,color});
+      id++;
     }
   });
-  pairs.sort(()=>Math.random()-0.5);
 
-  // Piramida kwadratowa dynamiczna
-  let idx=0;
-  const boardWidth=boardEl.clientWidth;
-  const boardHeight=boardEl.clientHeight;
-  const maxLayerSize=Math.max(...layers);
-  const tileSize=Math.floor(boardWidth/(maxLayerSize+1));
-  layers.forEach((layerSize,layerIndex)=>{
-    const offsetX=(boardWidth - layerSize*tileSize)/2;
-    const offsetY=layerIndex*tileSize/1.5;
-    for(let r=0;r<layerSize;r++){
-      for(let c=0;c<layerSize;c++){
-        if(idx>=pairs.length) break;
-        const p=pairs[idx];
-        const tile=document.createElement('div');
-        tile.classList.add('tile','flippable');
-        tile.style.width=tile.style.height=tileSize+'px';
-        tile.style.left=(c*tileSize + offsetX)+'px';
-        tile.style.top=(r*tileSize/1.2 + offsetY)+'px';
-        tile.style.border=`3px solid ${p.color}`;
-        tile.style.background='#fff';
-        tile.dataset.id=p.id; tile.dataset.color=p.color;
-        tile.innerHTML=`<img src='${p.img}'>`;
-        tile.addEventListener('click',()=>pickTile(tile));
-        boardEl.appendChild(tile);
-        idx++;
+  tiles.sort(()=>Math.random()-0.5);
+
+  let index=0;
+  layers.forEach((size,layerIndex)=>{
+    let offsetX=(board.clientWidth-size*tileSize)/2;
+    let offsetY=layerIndex*(tileSize/2);
+
+    for(let r=0;r<size;r++){
+      for(let c=0;c<size;c++){
+        if(index>=tiles.length) return;
+
+        let t=tiles[index];
+        let div=document.createElement("div");
+        div.className="tile";
+        div.style.width=tileSize+"px";
+        div.style.height=tileSize+"px";
+        div.style.left=(offsetX+c*tileSize)+"px";
+        div.style.top=(offsetY+r*tileSize)+"px";
+        div.style.border="4px solid "+t.color;
+        div.style.color=t.color;
+        div.dataset.id=t.id;
+        div.innerHTML=`<img src="${t.img}">`;
+        div.onclick=()=>pick(div);
+        board.appendChild(div);
+        index++;
       }
     }
   });
 }
 
-function pickTile(tile){
-  if(inventory.length>=4){ alert('Ekwipunek pełny! Gra resetuje się.'); startGame('pro'); return; }
-  tile.style.visibility='hidden';
-  const slot=inventoryEls[inventory.length];
-  slot.innerHTML=tile.innerHTML;
-  inventory.push({id:tile.dataset.id,color:tile.dataset.color,tile:tile});
+function randomLayers(){
+  let count=Math.floor(Math.random()*3)+2;
+  let arr=[];
+  for(let i=0;i<count;i++){
+    arr.push(Math.floor(Math.random()*5)+2);
+  }
+  return arr;
+}
+
+function pick(tile){
+  if(inventory.length>=4){
+    alert("Ekwipunek pełny — reset!");
+    startGame("pro");
+    return;
+  }
+
+  tile.style.visibility="hidden";
+  slots[inventory.length].innerHTML=tile.innerHTML;
+  inventory.push(tile);
+
   checkMatch();
 }
 
 function checkMatch(){
   for(let i=0;i<inventory.length;i++){
     for(let j=i+1;j<inventory.length;j++){
-      if(inventory[i].id===inventory[j].id && inventory[i].color===inventory[j].color){
-        inventory[i].tile.classList.add('flipped');
-        inventory[j].tile.classList.add('flipped');
-        inventory[i].tile.style.boxShadow='0 0 30px '+inventory[i].color;
-        inventory[j].tile.style.boxShadow='0 0 30px '+inventory[j].color;
-        setTimeout(()=>{
-          score+=200; scoreEl.innerText='Score: '+score;
-          inventory[i].tile.remove(); inventory[j].tile.remove();
-          inventoryEls[i].innerHTML=''; inventoryEls[j].innerHTML='';
-          inventory.splice(j,1); inventory.splice(i,1);
-        },300);
+      if(inventory[i].dataset.id===inventory[j].dataset.id){
+        inventory[i].remove();
+        inventory[j].remove();
+        inventory=[];
+        slots.forEach(s=>s.innerHTML="");
+        score+=200;
+        scoreEl.innerText="Score: "+score;
         return;
       }
     }
   }
-  if(inventory.length===4){ alert('Ekwipunek pełny! Gra resetuje się.'); startGame('pro'); }
 }
 </script>
 </body>
