@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mahjong Pyramid FINAL</title>
+<title>Mahjong Pyramid FINAL FIXED</title>
 <style>
 body{
   margin:0;
@@ -90,17 +90,17 @@ let tilesData=[];
 let inventory=[];
 let score=0;
 
-// PRELOAD 1-16 PNG
-let preloadPromises=[];
+// PRELOAD
+let preload=[];
 for(let i=1;i<=16;i++){
-  preloadPromises.push(new Promise(res=>{
+  preload.push(new Promise(res=>{
     let img=new Image();
     img.src=`assets/images/${i}.png`;
     img.onload=res; img.onerror=res;
   }));
 }
 
-Promise.all(preloadPromises).then(()=>{
+Promise.all(preload).then(()=>{
   document.querySelectorAll("#menu button").forEach(btn=>{
     btn.onclick=()=>{
       currentLevel=btn.dataset.level;
@@ -124,13 +124,12 @@ function startGame(level){
   slots.forEach(s=>s.innerHTML="");
 
   let layers = level==="classic" ? randomLayers() : levels[level];
-
-  let totalTiles = layers.reduce((sum,l)=>sum+l*l,0);
-  if(level==="pro") totalTiles=128; // dokładnie 128
-  if(totalTiles%2!==0) totalTiles--;
-
   let maxSize=Math.max(...layers);
   let tileSize=Math.floor(board.clientWidth/(maxSize+1));
+
+  let totalTiles = layers.reduce((sum,l)=>sum+l*l,0);
+  if(level==="pro") totalTiles=128;
+  if(totalTiles%2!==0) totalTiles--;
 
   let pairCount=totalTiles/2;
   let pairs=[];
@@ -185,8 +184,8 @@ function updateBlocked(){
     let layer=parseInt(t.dataset.layer);
     let rect=t.getBoundingClientRect();
     for(let other of tilesData){
-      if(other===t) continue;
-      if(parseInt(other.dataset.layer)>layer && other.style.visibility!=="hidden"){
+      if(other===t || other.style.visibility==="hidden") continue;
+      if(parseInt(other.dataset.layer)>layer){
         let r2=other.getBoundingClientRect();
         if(!(rect.right<r2.left||rect.left>r2.right||rect.bottom<r2.top||rect.top>r2.bottom)){
           t.classList.add("blocked");
@@ -198,13 +197,26 @@ function updateBlocked(){
 
 function pick(tile){
   if(tile.classList.contains("blocked")) return;
-  if(inventory.length>=4){ alert("Ekwipunek pełny — reset"); startGame(currentLevel); return; }
+  if(inventory.includes(tile)) return;
 
-  tile.style.visibility="hidden";
   inventory.push(tile);
-  slots[inventory.length-1].innerHTML=tile.innerHTML;
-  checkMatch();
+  tile.style.visibility="hidden";
+  renderInventory();
+
+  if(checkMatch()) return;
+
+  if(inventory.length===4){
+    alert("Ekwipunek pełny — reset gry");
+    startGame(currentLevel);
+  }
   updateBlocked();
+}
+
+function renderInventory(){
+  slots.forEach(s=>s.innerHTML="");
+  inventory.forEach((tile,i)=>{
+    slots[i].innerHTML=tile.innerHTML;
+  });
 }
 
 function checkMatch(){
@@ -213,15 +225,17 @@ function checkMatch(){
       if(inventory[i].dataset.id===inventory[j].dataset.id){
         inventory[i].remove();
         inventory[j].remove();
-        inventory=[];
-        slots.forEach(s=>s.innerHTML="");
+        inventory.splice(j,1);
+        inventory.splice(i,1);
         score+=200;
         scoreEl.innerText="Score: "+score;
+        renderInventory();
         updateBlocked();
-        return;
+        return true;
       }
     }
   }
+  return false;
 }
 </script>
 </body>
