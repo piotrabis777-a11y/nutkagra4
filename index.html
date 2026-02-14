@@ -51,7 +51,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:
 <script>
 const levelsData={latwy:[3,2],klasyczny:[4,3,2],sredni:[4,3,2],trudny:[5,4,3,2],ekstremalny:[6,5,4,3],zawodowy:[7,6,5,4,3]};
 const colors=["#ff0033","#00e5ff","#ffee00","#00ff55","#ff00ff","#00ffaa","#ff8800","#8888ff"];
-let layers=[],board=[],inventory=[],score=0,combo=1,lastPairTime=Date.now(),tileSize=100;
+let layers=[],board=[],inventory=[],score=0,combo=1,lastPairTime=Date.now(),tileSize=100,animating=false;
 const game=document.getElementById("game");
 const scoreSpan=document.getElementById("score");
 const comboSpan=document.getElementById("combo");
@@ -59,8 +59,10 @@ const timeSpan=document.getElementById("time");
 const popup=document.getElementById("popup");
 const menu=document.getElementById("menu");
 
+/* ================= DREWNIANE DŹWIĘKI ================= */
 function woodSound(){const ctx=new AudioContext();const o=ctx.createOscillator();const g=ctx.createGain();o.type="triangle";o.frequency.value=150;g.gain.setValueAtTime(0.2,ctx.currentTime);o.connect(g);g.connect(ctx.destination);o.start();g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.15);o.stop(ctx.currentTime+0.15);}
 
+/* ================= SCORE + NAPIS ================= */
 function getScoreByTime(){const diff=(Date.now()-lastPairTime)/1000;lastPairTime=Date.now();
 if(diff<=1.4){showText("YOU ARE THE LEGEND!","#ff00ff"); return 500;}
 if(diff<=3.5){showText("IT'S IMPOSSIBLE!","#00e5ff"); return 350;}
@@ -70,8 +72,9 @@ if(diff<=10){showText("NICE","#00ff55"); return 100;}
 showText("GOOD","#ffffff"); return 50;}
 function showText(txt,color){popup.textContent=txt;popup.style.color=color;popup.classList.add("show");setTimeout(()=>popup.classList.remove("show"),800);}
 
+/* ================= LOGIKA ================= */
 function generate(){
-  board=[]; inventory=[]; score=0; combo=1; lastPairTime=Date.now();
+  board=[]; inventory=[]; score=0; combo=1; lastPairTime=Date.now(); animating=false;
   const totalTiles=layers.reduce((a,b)=>a+b*b,0);
   let pool=[], img=1, color=0;
   while(pool.length<totalTiles){for(let i=0;i<2;i++){pool.push({img,color});}color++;if(color>=colors.length){color=0;img++;if(img>16)img=1;}}
@@ -104,8 +107,8 @@ function createFlyingScore(text,x,y){
 }
 
 function select(tile){
-  if(!isFree(tile))return;
-  woodSound();
+  if(animating || !isFree(tile)) return;
+  animating = true;
   const tileEl=document.querySelectorAll(".tile")[board.indexOf(tile)];
   const invRect=document.querySelectorAll(".inv-slot")[inventory.length].getBoundingClientRect();
   tileEl.style.transition="all .4s ease";
@@ -121,13 +124,13 @@ function select(tile){
           const gained=getScoreByTime();
           score+=gained*combo; combo++;
           createFlyingScore("+"+gained*combo,tileEl.getBoundingClientRect().left,tileEl.getBoundingClientRect().top);
-          woodSound(); render(); return;
+          woodSound(); render(); animating=false; return;
         }
       }
     }
-    if(inventory.length>=4){alert("Ekwipunek pełny!"); generate(); return;}
-    if(board.every(t=>t.removed)){alert("WYGRANA! SCORE: "+score); generate(); return;}
-    render();
+    if(inventory.length>=4){alert("Ekwipunek pełny!"); generate(); animating=false; return;}
+    if(board.every(t=>t.removed)){alert("WYGRANA! SCORE: "+score); generate(); animating=false; return;}
+    animating=false; render();
   },400);
 }
 
@@ -141,8 +144,8 @@ function render(){
   const screenWidth = window.innerWidth;
   const screenHeight = window.innerHeight*0.8;
   tileSize = Math.floor(Math.min(screenWidth/maxLayer, screenHeight/maxLayer));
-  const offsetX = Math.max((screenWidth-tileSize*maxLayer)/2,5);
-  const offsetY = Math.max((screenHeight-tileSize*maxLayer)/2,5);
+  const offsetX = (screenWidth - tileSize * maxLayer)/2;
+  const offsetY = (screenHeight - tileSize * maxLayer)/2;
 
   board.forEach(t=>{
     if(t.removed) return;
@@ -150,10 +153,10 @@ function render(){
     d.className="tile";
     d.style.width=d.style.height=tileSize+"px";
     d.style.border="4px solid "+t.color;
-    d.style.color=t.color;
-    d.style.left = offsetX + ((t.x + (maxLayer-t.z)/2)*tileSize) + "px";
-    d.style.top  = offsetY + ((t.y + (maxLayer-t.z)/2)*tileSize) + "px";
-    if(isFree(t)){d.style.opacity=1;d.style.boxShadow=`0 0 20px ${t.color}`;}else{d.style.opacity=0.5;d.style.boxShadow="none";}
+    d.style.left = offsetX + ((t.x + (maxLayer-t.z)/2) * tileSize) + "px";
+    d.style.top  = offsetY + ((t.y + (maxLayer-t.z)/2) * tileSize) + "px";
+    d.style.boxShadow = isFree(t) ? `0 0 20px ${t.color}` : "none";
+    d.style.opacity = isFree(t) ? 1 : 0.5;
     const img=document.createElement("img");
     img.src=`assets/images/${t.img}.png`;
     d.appendChild(img);
@@ -189,5 +192,6 @@ window.onresize=render;
 </script>
 </body>
 </html>
+
 
 
