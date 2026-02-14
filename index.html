@@ -12,61 +12,75 @@ html,body{
     height:100%;
     overflow:hidden;
     font-family:Arial,Helvetica,sans-serif;
-    background:#5a3b1f;
+    background:#3a2412;
 }
 
+/* ===== GAME BACKGROUND ===== */
 #game{
     position:relative;
     width:100%;
     height:100%;
-    background:radial-gradient(#7a4a25,#4a2c15);
+    background:
+        radial-gradient(circle at center,#7a4a25 0%,#3a2412 70%),
+        repeating-linear-gradient(
+            45deg,
+            rgba(255,255,255,0.04),
+            rgba(255,255,255,0.04) 10px,
+            rgba(0,0,0,0.04) 10px,
+            rgba(0,0,0,0.04) 20px
+        );
 }
 
 /* ===== MENU ===== */
 #menu{
     position:absolute;
     inset:0;
-    background:rgba(0,0,0,.6);
+    background:rgba(0,0,0,.65);
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    z-index:999;
+    z-index:1000;
 }
-
 #menu h1{
-    color:white;
+    color:#fff;
     margin-bottom:20px;
-    text-shadow:0 0 10px #000;
+    font-size:42px;
+    text-shadow:0 0 20px #0ff;
 }
-
 .menu-btn{
-    padding:14px 26px;
+    padding:14px 30px;
     margin:6px;
     font-size:18px;
     border:none;
-    border-radius:12px;
+    border-radius:14px;
     cursor:pointer;
     background:#fff;
-    box-shadow:0 0 10px #000;
+    box-shadow:0 0 20px #0ff;
 }
-.menu-btn:hover{transform:scale(1.05);}
+.menu-btn:hover{transform:scale(1.07);}
 
 /* ===== TILE ===== */
 .tile{
     position:absolute;
-    border-radius:14px;
+    border-radius:16px;
     background:white;
-    box-shadow:0 0 15px currentColor;
-    transition:.25s;
     cursor:pointer;
+    transition:transform .25s, box-shadow .25s, opacity .25s;
+    animation:neonPulse 2s infinite alternate;
 }
 .tile img{
     width:100%;
     height:100%;
     object-fit:contain;
+    pointer-events:none;
 }
-.tile:hover{transform:scale(1.07);}
+.tile:hover{transform:scale(1.08);}
+
+@keyframes neonPulse{
+    from{box-shadow:0 0 12px currentColor;}
+    to{box-shadow:0 0 28px currentColor, 0 0 60px currentColor;}
+}
 
 /* ===== INVENTORY ===== */
 #inventory{
@@ -75,14 +89,14 @@ html,body{
     left:50%;
     transform:translateX(-50%);
     display:flex;
-    gap:12px;
+    gap:14px;
 }
 .inv-slot{
-    width:70px;
-    height:70px;
+    width:72px;
+    height:72px;
     background:white;
-    border-radius:12px;
-    box-shadow:0 0 10px #000;
+    border-radius:14px;
+    box-shadow:0 0 15px #000;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -96,19 +110,21 @@ html,body{
     left:10px;
     color:white;
     font-size:18px;
-    text-shadow:0 0 5px black;
+    text-shadow:0 0 6px #000;
 }
 
+/* ===== POPUP TEXT ===== */
 #popup{
     position:absolute;
     top:45%;
     left:50%;
     transform:translate(-50%,-50%);
-    font-size:36px;
+    font-size:38px;
     font-weight:bold;
     opacity:0;
     pointer-events:none;
     transition:.3s;
+    text-shadow:0 0 30px currentColor;
 }
 #popup.show{
     opacity:1;
@@ -127,7 +143,6 @@ html,body{
     <button class="menu-btn" onclick="startLevel('hard')">Trudny</button>
     <button class="menu-btn" onclick="startLevel('extreme')">Ekstremalny</button>
     <button class="menu-btn" onclick="startLevel('pro')">Zawodowy</button>
-    <button class="menu-btn" onclick="startLevel('random')">Klasyczny losowy</button>
 </div>
 
 <div id="ui">
@@ -144,21 +159,30 @@ html,body{
     <div class="inv-slot"></div>
     <div class="inv-slot"></div>
 </div>
+
 </div>
 
 <script>
-const colors=[
- "#ff0033","#00e5ff","#ffee00","#00ff55",
- "#ff00ff","#00ffaa","#ff8800","#8888ff"
-];
+/* ===== AUDIO ===== */
+const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+function beep(f,d){
+ const o=audioCtx.createOscillator();
+ const g=audioCtx.createGain();
+ o.frequency.value=f;
+ o.connect(g); g.connect(audioCtx.destination);
+ g.gain.value=.2;
+ o.start();
+ setTimeout(()=>o.stop(),d*1000);
+}
 
+/* ===== DATA ===== */
+const colors=["#ff0033","#00e5ff","#ffee00","#00ff55","#ff00ff","#00ffaa","#ff8800","#8888ff"];
 const LEVELS={
  easy:[3,2],
  medium:[4,3,2],
  hard:[5,4,3,2],
  extreme:[6,5,4,3],
- pro:[7,6,5,4,3],
- random:()=>Array.from({length:3+Math.random()*3},(_,i)=>5-i)
+ pro:[7,6,5,4,3]
 };
 
 let layers=[],board=[],inventory=[];
@@ -171,12 +195,14 @@ const comboSpan=document.getElementById("combo");
 const timeSpan=document.getElementById("time");
 const popup=document.getElementById("popup");
 
+/* ===== START ===== */
 function startLevel(lvl){
- layers=typeof LEVELS[lvl]==="function"?LEVELS[lvl]():LEVELS[lvl];
+ layers=LEVELS[lvl];
  menu.style.display="none";
  generate();
 }
 
+/* ===== SCORE BY TIME ===== */
 function getScoreByTime(){
  const d=(Date.now()-lastPairTime)/1000;
  lastPairTime=Date.now();
@@ -195,15 +221,16 @@ function show(t,c){
  setTimeout(()=>popup.classList.remove("show"),800);
 }
 
+/* ===== GAME LOGIC ===== */
 function generate(){
  board=[];inventory=[];score=0;combo=1;
  lastPairTime=Date.now();
 
- let total=layers.reduce((a,b)=>a+b*b,0);
+ const total=layers.reduce((a,b)=>a+b*b,0);
  let pool=[],img=1,col=0;
  while(pool.length<total){
   for(let i=0;i<2;i++) pool.push({img,col});
-  col++;if(col>=colors.length){col=0;img++;if(img>16)img=1;}
+  col++; if(col>=colors.length){col=0;img++; if(img>16)img=1;}
  }
  pool.sort(()=>Math.random()-0.5);
 
@@ -218,48 +245,66 @@ function generate(){
 
 function isFree(t){
  if(t.removed) return false;
- if(board.some(o=>!o.removed&&o.z>t.z&&o.x===t.x&&o.y===t.y))return false;
+ if(board.some(o=>!o.removed&&o.z>t.z&&o.x===t.x&&o.y===t.y)) return false;
  const l=board.some(o=>!o.removed&&o.z===t.z&&o.x===t.x-1&&o.y===t.y);
  const r=board.some(o=>!o.removed&&o.z===t.z&&o.x===t.x+1&&o.y===t.y);
  return !(l&&r);
 }
 
 function select(t){
- if(!isFree(t))return;
- inventory.push(t);t.removed=true;
+ if(!isFree(t)) {beep(120,.2);return;}
+ beep(400,.05);
+ inventory.push(t); t.removed=true;
 
  for(let i=0;i<inventory.length;i++)
   for(let j=i+1;j<inventory.length;j++)
-   if(inventory[i].img===inventory[j].img&&inventory[i].color===inventory[j].color){
-    inventory.splice(j,1);inventory.splice(i,1);
-    score+=getScoreByTime()*combo;combo++;
-    render();return;
+   if(inventory[i].img===inventory[j].img && inventory[i].color===inventory[j].color){
+    inventory.splice(j,1); inventory.splice(i,1);
+    score+=getScoreByTime()*combo;
+    combo++;
+    beep(900,.15);
+    render(); return;
    }
 
- if(inventory.length===4){alert("Ekwipunek pełny");menu.style.display="flex";}
- if(board.every(t=>t.removed)){alert("WYGRANA!");menu.style.display="flex";}
+ if(inventory.length===4){
+  beep(150,.5);
+  alert("Ekwipunek pełny!");
+  menu.style.display="flex";
+ }
+ if(board.every(t=>t.removed)){
+  beep(1200,.4);
+  alert("WYGRANA! SCORE: "+score);
+  menu.style.display="flex";
+ }
  render();
 }
 
+/* ===== RENDER ===== */
 function render(){
  document.querySelectorAll(".tile").forEach(e=>e.remove());
+
  const max=Math.max(...layers);
- const screen=Math.min(innerWidth,innerHeight*.8);
- const size=Math.max(70,Math.min(screen/(max+1),140));
+ const screen=Math.min(innerWidth,innerHeight*0.8);
+ const size=Math.max(80,Math.min(screen/(max+1),160));
 
  board.forEach(t=>{
-  if(t.removed)return;
+  if(t.removed) return;
   const d=document.createElement("div");
   d.className="tile";
   d.style.width=size+"px";
   d.style.height=size+"px";
+  d.style.color=t.color;
   d.style.border="4px solid "+t.color;
   d.style.left=(innerWidth-screen)/2+(t.x+(max-t.z)/2)*size+"px";
-  d.style.top=(innerHeight*.8-screen)/2+(t.y+(max-t.z)/2)*size+"px";
+  d.style.top=(innerHeight*0.8-screen)/2+(t.y+(max-t.z)/2)*size+"px";
+
   const i=document.createElement("img");
   i.src=`assets/images/${t.img}.png`;
   d.appendChild(i);
-  if(isFree(t)) d.onclick=()=>select(t); else d.style.opacity=.4;
+
+  if(isFree(t)) d.onclick=()=>select(t);
+  else d.style.opacity=.45;
+
   game.appendChild(d);
  });
 
@@ -276,6 +321,7 @@ function render(){
  comboSpan.textContent=combo;
 }
 
+/* ===== TIMER ===== */
 setInterval(()=>timeSpan.textContent=((Date.now()-lastPairTime)/1000).toFixed(1),100);
 </script>
 </body>
