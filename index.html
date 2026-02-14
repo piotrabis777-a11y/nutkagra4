@@ -2,211 +2,150 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Mahjong Blast 3D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mahjong Neon PRO - Naprawiony</title>
 <style>
-body { margin:0; background:#1e1e2f; font-family:'Segoe UI',sans-serif; overflow:hidden; }
-#menu {
-    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    display:flex; flex-direction:column; gap:15px;
-}
-.menu-btn {
-    padding:15px 30px; font-size:24px; color:#fff; background:#333; border:none; border-radius:10px; cursor:pointer; transition:0.3s;
-}
-.menu-btn:hover { background:#555; }
-#game-container { position:relative; width:100vw; height:100vh; overflow:hidden; display:none; perspective:1000px; }
-.tile {
-    position:absolute; width:80px; height:100px; cursor:pointer;
-    transition: transform 0.3s, opacity 0.3s;
-    border-radius:8px; box-shadow:0 5px 10px rgba(0,0,0,0.5);
-    background-size: cover; background-position: center; z-index:0;
-}
-.tile.selected { transform:scale(1.2) translateZ(20px); z-index:100; box-shadow:0 10px 20px rgba(255,255,0,0.8); }
-.particle { position:absolute; width:10px; height:10px; border-radius:50%; pointer-events:none; }
-#inventory {
-    position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
-    display:flex; gap:10px;
-}
-.inventory-slot {
-    width:60px; height:80px; border:2px solid #fff; border-radius:8px; background:#333;
-    display:flex; align-items:center; justify-content:center;
-}
-.inventory-slot img { max-width:100%; max-height:100%; }
-#scoreboard { position:absolute; top:10px; left:50%; transform:translateX(-50%); color:#fff; font-size:20px; }
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:Arial,Helvetica,sans-serif;background:#3b2a1d;}
+#game{position:relative;width:100%;height:100%;background:radial-gradient(#332211,#1b0d07);}
+.tile{position:absolute;border-radius:14px;background:white;cursor:pointer;transition:all .3s ease;box-sizing:border-box;}
+.tile img{width:100%;height:100%;object-fit:contain;pointer-events:none;}
+.tile:hover{transform:scale(1.05);}
+#inventory{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:12px;}
+.inv-slot{width:70px;height:70px;background:#fafafa;border-radius:12px;box-shadow:0 0 10px #000;display:flex;align-items:center;justify-content:center;}
+.inv-slot img{width:90%;height:90%;}
+#ui{position:absolute;top:10px;left:10px;color:white;font-size:18px;text-shadow:0 0 5px black;}
+#comboDisplay{display:inline-block;transition:transform .3s,color .3s;font-weight:bold;}
+#popup{position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);font-size:38px;font-weight:bold;color:white;text-shadow:0 0 20px black;opacity:0;pointer-events:none;transition:opacity .3s, transform .3s;}
+#popup.show{opacity:1;transform:translate(-50%,-60%);}
+#menu{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;flex-direction:column;color:white;font-size:28px;z-index:100;}
+.menu-btn{margin:10px;padding:14px 28px;background:#222;border:none;border-radius:12px;color:white;font-size:24px;cursor:pointer;transition:all .2s;}
+.menu-btn:hover{background:#444;}
+.score-fly{position:absolute;font-weight:bold;color:yellow;font-size:24px;text-shadow:0 0 6px black;pointer-events:none;animation:flyup .8s forwards;}
+@keyframes flyup{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-60px);}}
+.score-fly-multiplier{position:absolute;font-weight:bold;color:#ff0;font-size:28px;text-shadow:0 0 10px black;pointer-events:none;animation:flymult .8s forwards;}
+@keyframes flymult{0%{opacity:1;transform:scale(1) translateY(0);}100%{opacity:0;transform:scale(1.5) translateY(-60px);}}
 </style>
 </head>
 <body>
 
-<div id="menu">
-    <button class="menu-btn" data-level="easy">Łatwy</button>
-    <button class="menu-btn" data-level="classic">Klasyczny</button>
-    <button class="menu-btn" data-level="medium">Średni</button>
-    <button class="menu-btn" data-level="hard">Trudny</button>
-    <button class="menu-btn" data-level="extreme">Ekstremalny</button>
-    <button class="menu-btn" data-level="pro">Zawodowy</button>
-    <button class="menu-btn" data-level="random">Wylosuj poziom</button>
-</div>
+<div id="game"></div>
+<div id="popup"></div>
 
-<div id="scoreboard">Punkty: 0</div>
-<div id="game-container"></div>
 <div id="inventory">
-    <div class="inventory-slot" data-slot="0"></div>
-    <div class="inventory-slot" data-slot="1"></div>
-    <div class="inventory-slot" data-slot="2"></div>
-    <div class="inventory-slot" data-slot="3"></div>
+  <div class="inv-slot"></div>
+  <div class="inv-slot"></div>
+  <div class="inv-slot"></div>
+  <div class="inv-slot"></div>
 </div>
 
-<audio id="click-sound" src="assets/sounds/click.mp3"></audio>
-<audio id="match-sound" src="assets/sounds/match.mp3"></audio>
+<div id="ui">
+  Score: <span id="score">0</span><br>
+  Combo: <span id="comboDisplay">1</span><br>
+  Time: <span id="time">0.0</span>s
+</div>
+
+<div id="menu">
+  <div>Wybierz poziom:</div>
+  <button class="menu-btn" data-level="latwy">Łatwy</button>
+  <button class="menu-btn" data-level="klasyczny">Klasyczny</button>
+  <button class="menu-btn" data-level="sredni">Średni</button>
+  <button class="menu-btn" data-level="trudny">Trudny</button>
+  <button class="menu-btn" data-level="ekstremalny">Ekstremalny</button>
+  <button class="menu-btn" data-level="zawodowy">Zawodowy</button>
+</div>
 
 <script>
-const menu = document.getElementById('menu');
-const container = document.getElementById('game-container');
-const clickSound = document.getElementById('click-sound');
-const matchSound = document.getElementById('match-sound');
-const scoreboard = document.getElementById('scoreboard');
-const slots = document.querySelectorAll('.inventory-slot');
+// ===== CONFIG =====
+const levelsData={latwy:[3,2],klasyczny:[4,3,2],sredni:[4,3,2],trudny:[5,4,3,2],ekstremalny:[6,5,4,3],zawodowy:[7,6,5,4,3]};
+const colors=["#ff0033","#00e5ff","#ffee00","#00ff55","#ff00ff","#00ffaa","#ff8800","#8888ff"];
+let layers=[],board=[],inventory=[],score=0,combo=1,lastPairTime=Date.now(),tileSize=100;
 
-let TILE_WIDTH=80, TILE_HEIGHT=100, tiles=[], inventory=[null,null,null,null], score=0, currentLevel='easy';
+// ===== ELEMENTS =====
+const game=document.getElementById("game");
+const scoreSpan=document.getElementById("score");
+const comboDisplay=document.getElementById("comboDisplay");
+const timeSpan=document.getElementById("time");
+const popup=document.getElementById("popup");
+const menu=document.getElementById("menu");
 
-const LEVELS = { easy:16, classic:32, medium:48, hard:64, extreme:80, pro:128 };
-const COLORS = ['red','blue','green','yellow','purple','orange','cyan','magenta'];
+// ===== PRELOAD IMAGES =====
+for(let i=1;i<=16;i++){let img=new Image();img.src=`assets/images/${i}.png`;}
 
-function randomInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
-function shuffle(array){ return array.sort(()=>Math.random()-0.5); }
-function updateScore(){ scoreboard.textContent=`Punkty: ${score}`; }
+// ===== SOUND =====
+function woodSound(){const ctx=new AudioContext();const o=ctx.createOscillator();const g=ctx.createGain();o.type="triangle";o.frequency.value=180;g.gain.setValueAtTime(0.25,ctx.currentTime);o.connect(g);g.connect(ctx.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.15);o.stop(ctx.currentTime+0.15);}
 
-function resetGame(){
-    tiles.forEach(t=>t.remove()); tiles=[];
-    inventory = [null,null,null,null]; slots.forEach(s=>s.innerHTML=''); score=0; updateScore();
-    generatePyramid(currentLevel);
+// ===== SCORE & POPUP =====
+function getScoreByTime(){const diff=(Date.now()-lastPairTime)/1000;lastPairTime=Date.now();
+if(diff<=1.4){showText("YOU ARE THE LEGEND!","#ff00ff");return 500;}
+if(diff<=3.5){showText("IT'S IMPOSSIBLE!","#00e5ff");return 350;}
+if(diff<=5.0){showText("INSANE","#ff0033");return 250;}
+if(diff<=7.5){showText("AWESOME","#ffee00");return 150;}
+if(diff<=10){showText("NICE","#00ff55");return 100;}
+showText("GOOD","#ffffff");return 50;}
+function showText(txt,color){popup.textContent=txt;popup.style.color=color;popup.classList.add("show");setTimeout(()=>popup.classList.remove("show"),800);}
+
+// ===== LOGIKA =====
+function generate(){
+  board=[];inventory=[];score=0;combo=1;lastPairTime=Date.now();
+  const total=layers.reduce((a,b)=>a+b*b,0);let pool=[],imgIndex=1,colorIndex=0;
+  while(pool.length<total){pool.push({img:imgIndex,color:colorIndex});pool.push({img:imgIndex,color:colorIndex});colorIndex++;if(colorIndex>=colors.length){colorIndex=0;imgIndex++;if(imgIndex>16)imgIndex=1;}}
+  pool.sort(()=>Math.random()-0.5);
+  let idx=0;layers.forEach((size,z)=>{for(let y=0;y<size;y++){for(let x=0;x<size;x++){board.push({x,y,z,img:pool[idx].img,color:colors[pool[idx].color],removed:false,animating:false});idx++;}}});
+  ensurePlayable(); render();
 }
 
-function createTile(value,color){
-    let tile = document.createElement('div');
-    tile.classList.add('tile');
-    tile.dataset.value=value;
-    tile.style.backgroundImage=`url(assets/images/${(value-1)%16+1}.png)`;
-    if(color) tile.style.border=`4px solid ${color}`;
-    tile.dataset.layer=0;
-    tile.addEventListener('click',()=>tileClick(tile));
-    container.appendChild(tile);
-    return tile;
+function isFree(t){if(t.removed||t.animating)return false;const left=board.some(o=>!o.removed&&o.z===t.z&&o.x===t.x-1&&o.y===t.y);const right=board.some(o=>!o.removed&&o.z===t.z&&o.x===t.x+1&&o.y===t.y);return !(left&&right);}
+function select(tile){
+  if(tile.animating||!isFree(tile))return;
+  tile.animating=true;
+  const tileEl=document.querySelectorAll(".tile")[board.indexOf(tile)];
+  const invRect=document.querySelectorAll(".inv-slot")[inventory.length].getBoundingClientRect();
+  tileEl.style.transition="all .4s ease";
+  tileEl.style.left=invRect.left+"px";tileEl.style.top=invRect.top+"px";tileEl.style.transform="scale(0.5)";
+  setTimeout(()=>{
+    inventory.push(tile); tile.removed=true; tile.animating=false;
+    for(let i=0;i<inventory.length;i++){for(let j=i+1;j<inventory.length;j++){if(inventory[i].img===inventory[j].img){inventory.splice(j,1);inventory.splice(i,1);const gained=getScoreByTime();score+=gained*combo;combo++;comboDisplay.textContent=combo;comboDisplay.style.transform="scale(1.5)";comboDisplay.style.color=colors[combo%colors.length];createFlyingMultiplier("x"+combo,invRect.left,invRect.top);setTimeout(()=>{comboDisplay.style.transform="scale(1)";comboDisplay.style.color="white";},300);createFlyingScore("+"+(gained*combo),invRect.left,invRect.top);woodSound();render();return;}}}
+    if(inventory.length>=4){alert("Ekwipunek pełny!");generate();return;}
+    if(board.every(t=>t.removed)){alert("WYGRANA! SCORE: "+score);generate();return;}
+    render();
+  },400);
 }
 
-// Funkcja generuje piramidę warstwową, najmniejsza u góry
-function generatePyramid(level){
-    tiles.forEach(t=>t.remove()); tiles=[];
-    let total=LEVELS[level];
-    let baseTiles = Math.ceil(Math.sqrt(total)); // przybliżona liczba wierszy podstawy
-    let values=[], pairsNeeded=Math.floor(total/2);
-    for(let i=1;i<=pairsNeeded;i++){
-        let color = COLORS[randomInt(0,COLORS.length-1)];
-        values.push({val:i,color}); values.push({val:i,color});
-    }
-    values = values.slice(0,total); shuffle(values);
+function hasPlayablePair(){const free=board.filter(t=>!t.removed&&!t.animating);for(let i=0;i<free.length;i++){for(let j=i+1;j<free.length;j++){if(free[i].img===free[j].img)return true;}}return false;}
+function shuffle(){const active=board.filter(t=>!t.removed);const data=active.map(t=>({img:t.img,color:t.color})).sort(()=>Math.random()-0.5);active.forEach((t,i)=>{t.img=data[i].img;t.color=data[i].color;});}
+function ensurePlayable(){let attempts=0;while(!hasPlayablePair()&&attempts<200){shuffle();attempts++;}}
 
-    // Budujemy piramidę warstwowo
-    let layer=0;
-    let offsetY=50;
-    while(values.length>0){
-        let layerSize = Math.min(values.length, baseTiles*baseTiles);
-        let rowCount = Math.ceil(Math.sqrt(layerSize));
-        let colCount = rowCount;
-        for(let r=0;r<rowCount;r++){
-            for(let c=0;c<colCount;c++){
-                if(values.length===0) break;
-                let tData = values.pop();
-                let tile = createTile(tData.val,tData.color);
-                let left = window.innerWidth/2 - (colCount/2*TILE_WIDTH) + c*TILE_WIDTH*0.7 + layer*10;
-                let top = offsetY + r*TILE_HEIGHT*0.5 - layer*10;
-                tile.style.left = `${left}px`;
-                tile.style.top = `${top}px`;
-                tile.dataset.layer=layer;
-                tile.style.zIndex=layer*10;
-                tiles.push(tile);
-            }
-        }
-        layer++; offsetY += rowCount*TILE_HEIGHT*0.5 - 20;
-        baseTiles--; // wyższa warstwa mniejsza
-    }
-    shuffle(tiles);
+// ===== ANIMACJE =====
+function createFlyingScore(text,x,y){const el=document.createElement("div");el.className="score-fly";el.style.left=x+"px";el.style.top=y+"px";el.textContent=text;game.appendChild(el);setTimeout(()=>el.remove(),800);}
+function createFlyingMultiplier(text,x,y){const el=document.createElement("div");el.className="score-fly-multiplier";el.style.left=x+"px";el.style.top=y+"px";el.textContent=text;game.appendChild(el);setTimeout(()=>el.remove(),800);}
+
+// ===== RENDER =====
+function render(){
+  document.querySelectorAll(".tile").forEach(e=>e.remove());
+  const maxLayer=Math.max(...layers); const screenW=window.innerWidth; const screenH=window.innerHeight*0.8;
+  tileSize=Math.floor(Math.min(screenW/maxLayer,screenH/maxLayer));
+  const offsetX=(screenW-tileSize*maxLayer)/2; const offsetY=(screenH-tileSize*maxLayer)/2;
+  board.forEach(t=>{if(t.removed)return;
+    const d=document.createElement("div"); d.className="tile"; d.style.width=d.style.height=tileSize+"px"; d.style.border="4px solid "+t.color;
+    d.style.left=offsetX + (t.x+(maxLayer-t.z)/2)*tileSize+"px";
+    d.style.top=offsetY + (t.y+(maxLayer-t.z)/2)*tileSize+"px";
+    if(isFree(t)){d.style.opacity=1; d.style.boxShadow=`0 0 20px ${t.color}`;} else {d.style.opacity=0.5; d.style.boxShadow="none";}
+    const img=document.createElement("img"); img.src=`assets/images/${t.img}.png`; d.appendChild(img);
+    if(isFree(t)) d.onclick=()=>select(t); game.appendChild(d);
+  });
+  document.querySelectorAll(".inv-slot").forEach((s,i)=>{s.innerHTML="";if(inventory[i]){const img=document.createElement("img");img.src=`assets/images/${inventory[i].img}.png`;s.appendChild(img);}});
+  scoreSpan.textContent=score;
 }
 
-function isTileClickable(tile){
-    let layer = parseInt(tile.dataset.layer);
-    let tileRect = tile.getBoundingClientRect();
-    for(let other of tiles){
-        if(other===tile) continue;
-        if(parseInt(other.dataset.layer) > layer){
-            let otherRect = other.getBoundingClientRect();
-            // sprawdź nakładanie
-            if(!(tileRect.right<otherRect.left || tileRect.left>otherRect.right || tileRect.bottom<otherRect.top || tileRect.top>otherRect.bottom)){
-                return false;
-            }
-        }
-    }
-    return true;
-}
+// ===== TIMER =====
+setInterval(()=>{timeSpan.textContent=((Date.now()-lastPairTime)/1000).toFixed(1);},100);
 
-function tileClick(tile){
-    if(!isTileClickable(tile)) return;
-    clickSound.currentTime=0; clickSound.play();
+// ===== MENU =====
+document.querySelectorAll(".menu-btn").forEach(btn=>{btn.onclick=()=>{layers=levelsData[btn.dataset.level];menu.style.display="none";generate();}});
 
-    // znajdź pierwszy wolny slot
-    let slotIndex = inventory.findIndex(s=>s===null);
-    if(slotIndex===-1){
-        alert("Ekwipunek pełny! Gra się resetuje.");
-        resetGame();
-        return;
-    }
-
-    inventory[slotIndex]=tile.dataset.value;
-    let img=document.createElement('img'); img.src=`assets/images/${tile.dataset.value}.png`;
-    slots[slotIndex].appendChild(img);
-    tile.style.opacity=0.3;
-
-    // Sprawdzenie pary w ekwipunku
-    let counts={};
-    inventory.forEach(v=>{ if(v) counts[v]=(counts[v]||0)+1; });
-    for(let val in counts){
-        if(counts[val]===2){
-            inventory = inventory.map(i=>i===val?null:i);
-            slots.forEach(s=>{ if(s.firstChild && s.firstChild.src.includes(`${val}.png`)) s.innerHTML=''; });
-            score+=10; updateScore();
-        }
-    }
-}
-
-function createParticles(tile){
-    for(let i=0;i<15;i++){
-        let p=document.createElement('div'); p.classList.add('particle');
-        p.style.background=`hsl(${randomInt(0,360)},80%,60%)`;
-        p.style.left=`${parseInt(tile.style.left)+TILE_WIDTH/2}px`;
-        p.style.top=`${parseInt(tile.style.top)+TILE_HEIGHT/2}px`;
-        container.appendChild(p);
-        let dx=randomInt(-100,100), dy=randomInt(-100,100), life=randomInt(500,1000);
-        p.animate([{transform:`translate(0px,0px)`,opacity:1},{transform:`translate(${dx}px,${dy}px)`,opacity:0}],
-                  {duration:life,easing:'ease-out'});
-        setTimeout(()=>p.remove(),life);
-    }
-}
-
-// MENU
-menu.querySelectorAll('.menu-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-        let level = btn.dataset.level;
-        if(level==='random'){ const keys=Object.keys(LEVELS); level=keys[randomInt(0,keys.length-1)]; }
-        currentLevel=level;
-        menu.style.display='none';
-        container.style.display='block';
-        generatePyramid(level);
-    });
-});
-
-function gameLoop(){ requestAnimationFrame(gameLoop); }
-gameLoop();
+window.onresize=render;
 </script>
-
 </body>
 </html>
+
 
