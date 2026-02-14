@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mahjong Neon PRO - Stabilny</title>
+<title>Mahjong Neon Premium</title>
 <style>
 html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:#3b2a1d;}
-#game{position:relative;width:100%;height:100%;background:radial-gradient(#332211,#1b0d07);}
-.tile{position:absolute;border-radius:12px;background:white;cursor:pointer;transition:all .3s ease;box-sizing:border-box;}
+#game{position:relative;width:100%;height:100%;background:url('assets/images/wood-bg.jpg') center/cover no-repeat;}
+.tile{position:absolute;border-radius:12px;background:white;cursor:pointer;transition:all .3s ease;box-sizing:border-box;box-shadow:0 0 5px #000;}
 .tile img{width:100%;height:100%;object-fit:contain;pointer-events:none;}
-.tile:hover{transform:scale(1.05);}
+.tile.free{box-shadow:0 0 20px #0ff,0 0 10px #0ff inset;}
 #inventory{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:12px;}
 .inv-slot{width:70px;height:70px;background:#fafafa;border-radius:12px;box-shadow:0 0 10px #000;display:flex;align-items:center;justify-content:center;}
 .inv-slot img{width:90%;height:90%;}
@@ -150,10 +150,10 @@ function select(tile){
   tileEl.style.left=invRect.left+"px"; tileEl.style.top=invRect.top+"px"; tileEl.style.transform="scale(0.5)";
   setTimeout(()=>{
     inventory.push(tile); tile.removed=true; tile.animating=false;
-    // check only matching pairs
+    // check only exact match (image+color)
     for(let i=0;i<inventory.length;i++){
       for(let j=i+1;j<inventory.length;j++){
-        if(inventory[i].img===inventory[j].img){
+        if(inventory[i].img===inventory[j].img && inventory[i].color===inventory[j].color){
           inventory.splice(j,1); inventory.splice(i,1);
           const gained=getScoreByTime(); score+=gained*combo; combo++;
           comboDisplay.textContent=combo;
@@ -168,9 +168,7 @@ function select(tile){
         }
       }
     }
-    // inventory full
     if(inventory.length>=4){alert("Ekwipunek pełny!"); generate(); return;}
-    // win
     if(board.every(t=>t.removed)){alert("WYGRANA! SCORE: "+score); generate(); return;}
     render();
   },400);
@@ -179,7 +177,7 @@ function select(tile){
 // ===== ENSURE PLAYABLE =====
 function hasPlayablePair(){
   const free=board.filter(t=>isFree(t));
-  for(let i=0;i<free.length;i++){for(let j=i+1;j<free.length;j++){if(free[i].img===free[j].img) return true;}}
+  for(let i=0;i<free.length;i++){for(let j=i+1;j<free.length;j++){if(free[i].img===free[j].img && free[i].color===free[j].color) return true;}}
   return false;
 }
 function shuffle(){
@@ -203,12 +201,11 @@ function render(){
   board.forEach(t=>{
     if(t.removed) return;
     const d=document.createElement("div");
-    d.className="tile";
+    d.className="tile"+(isFree(t)?" free":"");
     d.style.width=d.style.height=tileSize+"px";
     d.style.border="4px solid "+t.color;
     d.style.left=offsetX + (t.x+(maxLayer-t.z)/2)*tileSize+"px";
     d.style.top=offsetY + (t.y+(maxLayer-t.z)/2)*tileSize+"px";
-    if(isFree(t)){d.style.opacity=1; d.style.boxShadow=`0 0 20px ${t.color}`;} else {d.style.opacity=0.5; d.style.boxShadow="none";}
     const img=document.createElement("img"); img.src=`assets/images/${t.img}.png`; d.appendChild(img);
     if(isFree(t)) d.onclick=()=>select(t);
     game.appendChild(d);
@@ -228,4 +225,3 @@ window.onresize=render;
 </script>
 </body>
 </html>
-
