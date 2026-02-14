@@ -200,6 +200,27 @@ function createFlyingParticles(x,y){
     setTimeout(()=>p.remove(),600);
   }
 }
+function computeSafeTileSize({
+  layers,
+  screenW,
+  screenH,
+  padding = 16 // margines bezpieczeństwa
+}) {
+  const maxLayerSize = Math.max(...layers);
+
+  // MAKSYMALNY DOPUSZCZALNY ROZMIAR KAFELKA
+  const maxTileW = (screenW - padding * 2) / maxLayerSize;
+  const maxTileH = (screenH - padding * 2) / maxLayerSize;
+
+  // AGRESYWNE OGRANICZENIE
+  const tileSize = Math.floor(Math.min(maxTileW, maxTileH));
+
+  if (tileSize <= 0) {
+    throw new Error("❌ EKRAN ZA MAŁY – NIE DA SIĘ USTAWIĆ KAFELEK");
+  }
+
+  return tileSize;
+}
 
 // ===== RENDER =====
 function render(){
