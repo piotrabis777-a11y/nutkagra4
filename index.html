@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mahjong Neon</title>
+<title>Mahjong Neon - Final</title>
 <style>
 html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:Arial,Helvetica,sans-serif;background:#5a3b1f;}
 #game{position:relative;width:100%;height:100%;background:radial-gradient(#7a4a25,#4a2c15);}
-.tile{position:absolute;border-radius:14px;background:white;box-shadow:0 0 15px currentColor;transition:all .4s ease;cursor:pointer;}
+.tile{position:absolute;border-radius:14px;background:white;transition:all .4s ease;cursor:pointer;box-sizing:border-box;}
 .tile img{width:100%;height:100%;object-fit:contain;pointer-events:none;}
 .tile:hover{transform:scale(1.05);}
 #inventory{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:12px;}
@@ -19,6 +19,8 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:
 #menu{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;flex-direction:column;color:white;font-size:28px;z-index:100;}
 .menu-btn{margin:10px;padding:12px 24px;background:#222;border:none;border-radius:12px;color:white;font-size:24px;cursor:pointer;transition:all .2s;}
 .menu-btn:hover{background:#444;}
+.score-fly{position:absolute;font-weight:bold;color:yellow;font-size:24px;text-shadow:0 0 6px black;pointer-events:none;animation:flyup 0.8s forwards;}
+@keyframes flyup{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-60px);}}
 </style>
 </head>
 <body>
@@ -47,15 +49,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:
 </div>
 
 <script>
-/* ================= DATA ================= */
-const levelsData={
-  latwy:[3,2],
-  klasyczny:[4,3,2],
-  sredni:[4,3,2],
-  trudny:[5,4,3,2],
-  ekstremalny:[6,5,4,3],
-  zawodowy:[7,6,5,4,3]
-};
+const levelsData={latwy:[3,2],klasyczny:[4,3,2],sredni:[4,3,2],trudny:[5,4,3,2],ekstremalny:[6,5,4,3],zawodowy:[7,6,5,4,3]};
 const colors=["#ff0033","#00e5ff","#ffee00","#00ff55","#ff00ff","#00ffaa","#ff8800","#8888ff"];
 let layers=[],board=[],inventory=[],score=0,combo=1,lastPairTime=Date.now(),tileSize=100;
 const game=document.getElementById("game");
@@ -65,10 +59,8 @@ const timeSpan=document.getElementById("time");
 const popup=document.getElementById("popup");
 const menu=document.getElementById("menu");
 
-/* ================= DREWNIANE DŹWIĘKI ================= */
 function woodSound(){const ctx=new AudioContext();const o=ctx.createOscillator();const g=ctx.createGain();o.type="triangle";o.frequency.value=150;g.gain.setValueAtTime(0.2,ctx.currentTime);o.connect(g);g.connect(ctx.destination);o.start();g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.15);o.stop(ctx.currentTime+0.15);}
 
-/* ================= SCORE + NAPIS ================= */
 function getScoreByTime(){const diff=(Date.now()-lastPairTime)/1000;lastPairTime=Date.now();
 if(diff<=1.4){showText("YOU ARE THE LEGEND!","#ff00ff"); return 500;}
 if(diff<=3.5){showText("IT'S IMPOSSIBLE!","#00e5ff"); return 350;}
@@ -78,7 +70,6 @@ if(diff<=10){showText("NICE","#00ff55"); return 100;}
 showText("GOOD","#ffffff"); return 50;}
 function showText(txt,color){popup.textContent=txt;popup.style.color=color;popup.classList.add("show");setTimeout(()=>popup.classList.remove("show"),800);}
 
-/* ================= LOGIKA ================= */
 function generate(){
   board=[]; inventory=[]; score=0; combo=1; lastPairTime=Date.now();
   const totalTiles=layers.reduce((a,b)=>a+b*b,0);
@@ -102,13 +93,21 @@ const right=board.some(o=>!o.removed&&o.z===t.z&&o.x===t.x+1&&o.y===t.y);
 return !(left&&right);
 }
 
+function createFlyingScore(text,x,y){
+  const el=document.createElement("div");
+  el.className="score-fly";
+  el.style.left=x+"px";
+  el.style.top=y+"px";
+  el.textContent=text;
+  game.appendChild(el);
+  setTimeout(()=>el.remove(),800);
+}
+
 function select(tile){
   if(!isFree(tile))return;
   woodSound();
   const tileEl=document.querySelectorAll(".tile")[board.indexOf(tile)];
   const invRect=document.querySelectorAll(".inv-slot")[inventory.length].getBoundingClientRect();
-  const tileRect=tileEl.getBoundingClientRect();
-  // animacja przelotu
   tileEl.style.transition="all .4s ease";
   tileEl.style.left=invRect.left+"px";
   tileEl.style.top=invRect.top+"px";
@@ -120,7 +119,9 @@ function select(tile){
         if(inventory[i].img===inventory[j].img&&inventory[i].color===inventory[j].color){
           inventory.splice(j,1); inventory.splice(i,1);
           const gained=getScoreByTime();
-          score+=gained*combo; combo++; woodSound(); render(); return;
+          score+=gained*combo; combo++;
+          createFlyingScore("+"+gained*combo,tileEl.getBoundingClientRect().left,tileEl.getBoundingClientRect().top);
+          woodSound(); render(); return;
         }
       }
     }
@@ -134,14 +135,14 @@ function hasPlayablePair(){const free=board.filter(t=>isFree(t));for(let i=0;i<f
 function shuffle(){const active=board.filter(t=>!t.removed);const data=active.map(t=>({img:t.img,color:t.color}));data.sort(()=>Math.random()-0.5);active.forEach((t,i)=>{t.img=data[i].img;t.color=data[i].color;});}
 function ensurePlayable(){let s=0;while(!hasPlayablePair()&&s<100){shuffle(); s++;}}
 
-/* ================= RENDER ================= */
 function render(){
   document.querySelectorAll(".tile").forEach(e=>e.remove());
-  const maxLayer=Math.max(...layers);
-  const screen=Math.min(innerWidth,innerHeight*0.8);
-  tileSize=Math.max(70,Math.min(screen/(maxLayer+1),140));
-  const offsetX=(innerWidth-tileSize*maxLayer)/2;
-  const offsetY=(innerHeight*0.8-tileSize*maxLayer)/2;
+  const maxLayer = Math.max(...layers);
+  const screenWidth = window.innerWidth;
+  const screenHeight = window.innerHeight*0.8;
+  tileSize = Math.floor(Math.min(screenWidth/maxLayer, screenHeight/maxLayer));
+  const offsetX = Math.max((screenWidth-tileSize*maxLayer)/2,5);
+  const offsetY = Math.max((screenHeight-tileSize*maxLayer)/2,5);
 
   board.forEach(t=>{
     if(t.removed) return;
@@ -150,13 +151,13 @@ function render(){
     d.style.width=d.style.height=tileSize+"px";
     d.style.border="4px solid "+t.color;
     d.style.color=t.color;
-    d.style.left=offsetX+((t.x+(maxLayer-t.z)/2)*tileSize)+"px";
-    d.style.top=offsetY+((t.y+(maxLayer-t.z)/2)*tileSize)+"px";
+    d.style.left = offsetX + ((t.x + (maxLayer-t.z)/2)*tileSize) + "px";
+    d.style.top  = offsetY + ((t.y + (maxLayer-t.z)/2)*tileSize) + "px";
+    if(isFree(t)){d.style.opacity=1;d.style.boxShadow=`0 0 20px ${t.color}`;}else{d.style.opacity=0.5;d.style.boxShadow="none";}
     const img=document.createElement("img");
     img.src=`assets/images/${t.img}.png`;
     d.appendChild(img);
     if(isFree(t)) d.onclick=()=>select(t);
-    else d.style.opacity=0.5;
     game.appendChild(d);
   });
 
@@ -169,14 +170,12 @@ function render(){
     }
   });
 
-  scoreSpan.textContent=score;
-  comboSpan.textContent=combo;
+  scoreSpan.textContent = score;
+  comboSpan.textContent = combo;
 }
 
-/* ================= TIMER ================= */
 setInterval(()=>{timeSpan.textContent=((Date.now()-lastPairTime)/1000).toFixed(1);},100);
 
-/* ================= MENU ================= */
 document.querySelectorAll(".menu-btn").forEach(btn=>{
   btn.onclick=()=>{
     const lvl=btn.dataset.level;
@@ -190,6 +189,5 @@ window.onresize=render;
 </script>
 </body>
 </html>
-
 
 
