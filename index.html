@@ -5,175 +5,134 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mahjong Neon</title>
 <style>
-html,body{
-  margin:0;padding:0;width:100%;height:100%;overflow:hidden;
-  font-family:Arial,Helvetica,sans-serif;
-  background:#5a3b1f;
-}
-#game{
-  position:relative;width:100%;height:100%;
-  background:radial-gradient(#7a4a25,#4a2c15);
-}
-.tile{
-  position:absolute;border-radius:14px;background:white;
-  box-shadow:0 0 15px currentColor;
-  transition:transform .25s ease, box-shadow .25s ease, opacity .25s ease, left .4s ease, top .4s ease;
-  cursor:pointer;
-}
-.tile img{
-  width:100%;height:100%;object-fit:contain;pointer-events:none;
-}
-.tile:hover{transform:scale(1.07);}
-#inventory{
-  position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
-  display:flex;gap:12px;
-}
-.inv-slot{
-  width:70px;height:70px;background:white;border-radius:12px;
-  box-shadow:0 0 10px #000;display:flex;align-items:center;justify-content:center;
-}
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:Arial,Helvetica,sans-serif;background:#5a3b1f;}
+#game{position:relative;width:100%;height:100%;background:radial-gradient(#7a4a25,#4a2c15);}
+.tile{position:absolute;border-radius:14px;background:white;box-shadow:0 0 15px currentColor;transition:all .4s ease;cursor:pointer;}
+.tile img{width:100%;height:100%;object-fit:contain;pointer-events:none;}
+.tile:hover{transform:scale(1.05);}
+#inventory{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:12px;}
+.inv-slot{width:70px;height:70px;background:white;border-radius:12px;box-shadow:0 0 10px #000;display:flex;align-items:center;justify-content:center;}
 .inv-slot img{width:90%;height:90%;}
-#ui{
-  position:absolute;top:10px;left:10px;color:white;font-size:18px;text-shadow:0 0 5px black;
-}
-#popup{
-  position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);
-  font-size:36px;font-weight:bold;color:white;text-shadow:0 0 20px currentColor;
-  opacity:0;pointer-events:none;transition:opacity .3s, transform .3s;
-}
+#ui{position:absolute;top:10px;left:10px;color:white;font-size:18px;text-shadow:0 0 5px black;}
+#popup{position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);font-size:36px;font-weight:bold;color:white;text-shadow:0 0 20px currentColor;opacity:0;pointer-events:none;transition:opacity .3s, transform .3s;}
 #popup.show{opacity:1;transform:translate(-50%,-60%);}
+#menu{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;flex-direction:column;color:white;font-size:28px;z-index:100;}
+.menu-btn{margin:10px;padding:12px 24px;background:#222;border:none;border-radius:12px;color:white;font-size:24px;cursor:pointer;transition:all .2s;}
+.menu-btn:hover{background:#444;}
 </style>
 </head>
 <body>
-<div id="game">
-  <div id="ui">
-    Score: <span id="score">0</span><br>
-    Combo: <span id="combo">1</span><br>
-    Time: <span id="time">0.0</span>s
-  </div>
-  <div id="popup"></div>
-  <div id="inventory">
-    <div class="inv-slot"></div>
-    <div class="inv-slot"></div>
-    <div class="inv-slot"></div>
-    <div class="inv-slot"></div>
-  </div>
+<div id="game"></div>
+<div id="popup"></div>
+<div id="inventory">
+  <div class="inv-slot"></div>
+  <div class="inv-slot"></div>
+  <div class="inv-slot"></div>
+  <div class="inv-slot"></div>
+</div>
+<div id="ui">
+  Score: <span id="score">0</span><br>
+  Combo: <span id="combo">1</span><br>
+  Time: <span id="time">0.0</span>s
+</div>
+
+<div id="menu">
+  <div>Wybierz poziom:</div>
+  <button class="menu-btn" data-level="latwy">Łatwy</button>
+  <button class="menu-btn" data-level="klasyczny">Klasyczny</button>
+  <button class="menu-btn" data-level="sredni">Średni</button>
+  <button class="menu-btn" data-level="trudny">Trudny</button>
+  <button class="menu-btn" data-level="ekstremalny">Ekstremalny</button>
+  <button class="menu-btn" data-level="zawodowy">Zawodowy</button>
 </div>
 
 <script>
 /* ================= DATA ================= */
+const levelsData={
+  latwy:[3,2],
+  klasyczny:[4,3,2],
+  sredni:[4,3,2],
+  trudny:[5,4,3,2],
+  ekstremalny:[6,5,4,3],
+  zawodowy:[7,6,5,4,3]
+};
 const colors=["#ff0033","#00e5ff","#ffee00","#00ff55","#ff00ff","#00ffaa","#ff8800","#8888ff"];
-const layers=[7,6,5,4,3]; // zawodowy
-let board=[], inventory=[], score=0, combo=1, lastPairTime=Date.now(), tileSize=100;
-
+let layers=[],board=[],inventory=[],score=0,combo=1,lastPairTime=Date.now(),tileSize=100;
 const game=document.getElementById("game");
 const scoreSpan=document.getElementById("score");
 const comboSpan=document.getElementById("combo");
 const timeSpan=document.getElementById("time");
 const popup=document.getElementById("popup");
+const menu=document.getElementById("menu");
 
 /* ================= DREWNIANE DŹWIĘKI ================= */
-function woodSound(){
-  const ctx=new AudioContext();
-  const o=ctx.createOscillator();
-  const g=ctx.createGain();
-  o.type="triangle";
-  o.frequency.value=150;
-  g.gain.setValueAtTime(0.2,ctx.currentTime);
-  o.connect(g);g.connect(ctx.destination);
-  o.start();
-  g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.15);
-  o.stop(ctx.currentTime+0.15);
-}
+function woodSound(){const ctx=new AudioContext();const o=ctx.createOscillator();const g=ctx.createGain();o.type="triangle";o.frequency.value=150;g.gain.setValueAtTime(0.2,ctx.currentTime);o.connect(g);g.connect(ctx.destination);o.start();g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.15);o.stop(ctx.currentTime+0.15);}
 
-/* ================= SCORE wg CZASU + NAPIS ================= */
-function getScoreByTime(){
-  const diff=(Date.now()-lastPairTime)/1000;
-  lastPairTime=Date.now();
-  if(diff<=1.4){showText("YOU ARE THE LEGEND!","#ff00ff"); return 500;}
-  if(diff<=3.5){showText("IT'S IMPOSSIBLE!","#00e5ff"); return 350;}
-  if(diff<=5.0){showText("INSANE","#ff0033"); return 250;}
-  if(diff<=7.5){showText("AWESOME","#ffee00"); return 150;}
-  if(diff<=10){showText("NICE","#00ff55"); return 100;}
-  showText("GOOD","#ffffff"); return 50;
-}
-function showText(txt,color){
-  popup.textContent=txt;
-  popup.style.color=color;
-  popup.classList.add("show");
-  setTimeout(()=>popup.classList.remove("show"),800);
-}
+/* ================= SCORE + NAPIS ================= */
+function getScoreByTime(){const diff=(Date.now()-lastPairTime)/1000;lastPairTime=Date.now();
+if(diff<=1.4){showText("YOU ARE THE LEGEND!","#ff00ff"); return 500;}
+if(diff<=3.5){showText("IT'S IMPOSSIBLE!","#00e5ff"); return 350;}
+if(diff<=5.0){showText("INSANE","#ff0033"); return 250;}
+if(diff<=7.5){showText("AWESOME","#ffee00"); return 150;}
+if(diff<=10){showText("NICE","#00ff55"); return 100;}
+showText("GOOD","#ffffff"); return 50;}
+function showText(txt,color){popup.textContent=txt;popup.style.color=color;popup.classList.add("show");setTimeout(()=>popup.classList.remove("show"),800);}
 
 /* ================= LOGIKA ================= */
 function generate(){
   board=[]; inventory=[]; score=0; combo=1; lastPairTime=Date.now();
   const totalTiles=layers.reduce((a,b)=>a+b*b,0);
   let pool=[], img=1, color=0;
-  while(pool.length<totalTiles){
-    for(let i=0;i<2;i++){pool.push({img,color});}
-    color++; if(color>=colors.length){color=0;img++; if(img>16)img=1;}
-  }
+  while(pool.length<totalTiles){for(let i=0;i<2;i++){pool.push({img,color});}color++;if(color>=colors.length){color=0;img++;if(img>16)img=1;}}
   pool.sort(()=>Math.random()-0.5);
   let idx=0;
   layers.forEach((size,z)=>{
     for(let y=0;y<size;y++)
       for(let x=0;x<size;x++){
-        board.push({x,y,z,img:pool[idx].img,color:colors[pool[idx].color],removed:false});
-        idx++;
+        board.push({x,y,z,img:pool[idx].img,color:colors[pool[idx].color],removed:false}); idx++;
       }
   });
   ensurePlayable(); render();
 }
 
-function isFree(t){
-  if(t.removed) return false;
-  if(board.some(o=>!o.removed && o.z>t.z &&
-    o.x>=t.x && o.x<t.x+1 && o.y>=t.y && o.y<t.y+1)) return false;
-  const left=board.some(o=>!o.removed && o.z===t.z && o.x===t.x-1 && o.y===t.y);
-  const right=board.some(o=>!o.removed && o.z===t.z && o.x===t.x+1 && o.y===t.y);
-  return !(left && right);
+function isFree(t){if(t.removed)return false;
+if(board.some(o=>!o.removed&&o.z>t.z&&o.x>=t.x&&o.x<t.x+1&&o.y>=t.y&&o.y<t.y+1))return false;
+const left=board.some(o=>!o.removed&&o.z===t.z&&o.x===t.x-1&&o.y===t.y);
+const right=board.some(o=>!o.removed&&o.z===t.z&&o.x===t.x+1&&o.y===t.y);
+return !(left&&right);
 }
 
 function select(tile){
-  if(!isFree(tile)) return;
+  if(!isFree(tile))return;
   woodSound();
-  inventory.push(tile); tile.removed=true;
-
-  for(let i=0;i<inventory.length;i++){
-    for(let j=i+1;j<inventory.length;j++){
-      if(inventory[i].img===inventory[j].img &&
-         inventory[i].color===inventory[j].color){
-        inventory.splice(j,1); inventory.splice(i,1);
-        const gained=getScoreByTime();
-        score+=gained*combo; combo++;
-        woodSound(); render(); return;
+  const tileEl=document.querySelectorAll(".tile")[board.indexOf(tile)];
+  const invRect=document.querySelectorAll(".inv-slot")[inventory.length].getBoundingClientRect();
+  const tileRect=tileEl.getBoundingClientRect();
+  // animacja przelotu
+  tileEl.style.transition="all .4s ease";
+  tileEl.style.left=invRect.left+"px";
+  tileEl.style.top=invRect.top+"px";
+  tileEl.style.transform="scale(0.5)";
+  setTimeout(()=>{
+    inventory.push(tile); tile.removed=true;
+    for(let i=0;i<inventory.length;i++){
+      for(let j=i+1;j<inventory.length;j++){
+        if(inventory[i].img===inventory[j].img&&inventory[i].color===inventory[j].color){
+          inventory.splice(j,1); inventory.splice(i,1);
+          const gained=getScoreByTime();
+          score+=gained*combo; combo++; woodSound(); render(); return;
+        }
       }
     }
-  }
-  if(inventory.length>=4){alert("Ekwipunek pełny!"); generate(); return;}
-  if(board.every(t=>t.removed)){alert("WYGRANA! SCORE: "+score); generate(); return;}
-  render();
+    if(inventory.length>=4){alert("Ekwipunek pełny!"); generate(); return;}
+    if(board.every(t=>t.removed)){alert("WYGRANA! SCORE: "+score); generate(); return;}
+    render();
+  },400);
 }
 
-function hasPlayablePair(){
-  const free=board.filter(t=>isFree(t));
-  for(let i=0;i<free.length;i++)
-    for(let j=i+1;j<free.length;j++)
-      if(free[i].img===free[j].img && free[i].color===free[j].color) return true;
-  return false;
-}
-
-function shuffle(){
-  const active=board.filter(t=>!t.removed);
-  const data=active.map(t=>({img:t.img,color:t.color}));
-  data.sort(()=>Math.random()-0.5);
-  active.forEach((t,i)=>{t.img=data[i].img; t.color=data[i].color;});
-}
-
-function ensurePlayable(){
-  let s=0;
-  while(!hasPlayablePair()&&s<100){shuffle(); s++;}
-}
+function hasPlayablePair(){const free=board.filter(t=>isFree(t));for(let i=0;i<free.length;i++)for(let j=i+1;j<free.length;j++)if(free[i].img===free[j].img&&free[i].color===free[j].color)return true;return false;}
+function shuffle(){const active=board.filter(t=>!t.removed);const data=active.map(t=>({img:t.img,color:t.color}));data.sort(()=>Math.random()-0.5);active.forEach((t,i)=>{t.img=data[i].img;t.color=data[i].color;});}
+function ensurePlayable(){let s=0;while(!hasPlayablePair()&&s<100){shuffle(); s++;}}
 
 /* ================= RENDER ================= */
 function render(){
@@ -217,9 +176,17 @@ function render(){
 /* ================= TIMER ================= */
 setInterval(()=>{timeSpan.textContent=((Date.now()-lastPairTime)/1000).toFixed(1);},100);
 
-/* ================= START ================= */
+/* ================= MENU ================= */
+document.querySelectorAll(".menu-btn").forEach(btn=>{
+  btn.onclick=()=>{
+    const lvl=btn.dataset.level;
+    layers=levelsData[lvl];
+    menu.style.display="none";
+    generate();
+  }
+});
+
 window.onresize=render;
-generate();
 </script>
 </body>
 </html>
