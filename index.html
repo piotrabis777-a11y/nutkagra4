@@ -15,7 +15,6 @@ html,body{
     background:#3a2412;
 }
 
-/* ===== GAME BACKGROUND ===== */
 #game{
     position:relative;
     width:100%;
@@ -76,7 +75,6 @@ html,body{
     pointer-events:none;
 }
 .tile:hover{transform:scale(1.08);}
-
 @keyframes neonPulse{
     from{box-shadow:0 0 12px currentColor;}
     to{box-shadow:0 0 28px currentColor, 0 0 60px currentColor;}
@@ -168,9 +166,10 @@ const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
 function beep(f,d){
  const o=audioCtx.createOscillator();
  const g=audioCtx.createGain();
+ o.type="sine"; // łagodny ton
  o.frequency.value=f;
  o.connect(g); g.connect(audioCtx.destination);
- g.gain.value=.2;
+ g.gain.value=.1; // delikatny
  o.start();
  setTimeout(()=>o.stop(),d*1000);
 }
@@ -252,8 +251,8 @@ function isFree(t){
 }
 
 function select(t){
- if(!isFree(t)) {beep(120,.2);return;}
- beep(400,.05);
+ if(!isFree(t)) {beep(180,.15);return;}
+ beep(400,.1);
  inventory.push(t); t.removed=true;
 
  for(let i=0;i<inventory.length;i++)
@@ -262,17 +261,17 @@ function select(t){
     inventory.splice(j,1); inventory.splice(i,1);
     score+=getScoreByTime()*combo;
     combo++;
-    beep(900,.15);
+    beep(700,.12);
     render(); return;
    }
 
  if(inventory.length===4){
-  beep(150,.5);
+  beep(220,.4);
   alert("Ekwipunek pełny!");
   menu.style.display="flex";
  }
  if(board.every(t=>t.removed)){
-  beep(1200,.4);
+  beep(800,.3);
   alert("WYGRANA! SCORE: "+score);
   menu.style.display="flex";
  }
@@ -287,6 +286,10 @@ function render(){
  const screen=Math.min(innerWidth,innerHeight*0.8);
  const size=Math.max(80,Math.min(screen/(max+1),160));
 
+ // Margines aby nie wychodziło poza ekran
+ const offsetX=(innerWidth-screen)/2;
+ const offsetY=(innerHeight*0.8-screen)/2;
+
  board.forEach(t=>{
   if(t.removed) return;
   const d=document.createElement("div");
@@ -295,8 +298,8 @@ function render(){
   d.style.height=size+"px";
   d.style.color=t.color;
   d.style.border="4px solid "+t.color;
-  d.style.left=(innerWidth-screen)/2+(t.x+(max-t.z)/2)*size+"px";
-  d.style.top=(innerHeight*0.8-screen)/2+(t.y+(max-t.z)/2)*size+"px";
+  d.style.left=Math.min(offsetX+(t.x+(max-t.z)/2)*size,innerWidth-size)+"px";
+  d.style.top=Math.min(offsetY+(t.y+(max-t.z)/2)*size,innerHeight*0.8-size)+"px";
 
   const i=document.createElement("img");
   i.src=`assets/images/${t.img}.png`;
@@ -326,7 +329,6 @@ setInterval(()=>timeSpan.textContent=((Date.now()-lastPairTime)/1000).toFixed(1)
 </script>
 </body>
 </html>
-
 
 
 
