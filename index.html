@@ -4,328 +4,222 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mahjong Neon</title>
-
 <style>
 html,body{
-    margin:0;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    font-family:Arial,Helvetica,sans-serif;
-    background:#3a2412;
+  margin:0;padding:0;width:100%;height:100%;overflow:hidden;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#5a3b1f;
 }
-
 #game{
-    position:relative;
-    width:100%;
-    height:100%;
-    background:
-        radial-gradient(circle at center,#7a4a25 0%,#3a2412 70%),
-        repeating-linear-gradient(
-            45deg,
-            rgba(255,255,255,0.04),
-            rgba(255,255,255,0.04) 10px,
-            rgba(0,0,0,0.04) 10px,
-            rgba(0,0,0,0.04) 20px
-        );
+  position:relative;width:100%;height:100%;
+  background:radial-gradient(#7a4a25,#4a2c15);
 }
-
-/* ===== MENU ===== */
-#menu{
-    position:absolute;
-    inset:0;
-    background:rgba(0,0,0,.65);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    z-index:1000;
-}
-#menu h1{
-    color:#fff;
-    margin-bottom:20px;
-    font-size:42px;
-    text-shadow:0 0 20px #0ff;
-}
-.menu-btn{
-    padding:14px 30px;
-    margin:6px;
-    font-size:18px;
-    border:none;
-    border-radius:14px;
-    cursor:pointer;
-    background:#fff;
-    box-shadow:0 0 20px #0ff;
-}
-.menu-btn:hover{transform:scale(1.07);}
-
-/* ===== TILE ===== */
 .tile{
-    position:absolute;
-    border-radius:16px;
-    background:white;
-    cursor:pointer;
-    transition:transform .25s, box-shadow .25s, opacity .25s;
-    animation:neonPulse 2s infinite alternate;
+  position:absolute;border-radius:14px;background:white;
+  box-shadow:0 0 15px currentColor;
+  transition:transform .25s ease, box-shadow .25s ease, opacity .25s ease, left .4s ease, top .4s ease;
+  cursor:pointer;
 }
 .tile img{
-    width:100%;
-    height:100%;
-    object-fit:contain;
-    pointer-events:none;
+  width:100%;height:100%;object-fit:contain;pointer-events:none;
 }
-.tile:hover{transform:scale(1.08);}
-@keyframes neonPulse{
-    from{box-shadow:0 0 12px currentColor;}
-    to{box-shadow:0 0 28px currentColor, 0 0 60px currentColor;}
-}
-
-/* ===== INVENTORY ===== */
+.tile:hover{transform:scale(1.07);}
 #inventory{
-    position:absolute;
-    bottom:10px;
-    left:50%;
-    transform:translateX(-50%);
-    display:flex;
-    gap:14px;
+  position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+  display:flex;gap:12px;
 }
 .inv-slot{
-    width:72px;
-    height:72px;
-    background:white;
-    border-radius:14px;
-    box-shadow:0 0 15px #000;
-    display:flex;
-    align-items:center;
-    justify-content:center;
+  width:70px;height:70px;background:white;border-radius:12px;
+  box-shadow:0 0 10px #000;display:flex;align-items:center;justify-content:center;
 }
 .inv-slot img{width:90%;height:90%;}
-
-/* ===== UI ===== */
 #ui{
-    position:absolute;
-    top:10px;
-    left:10px;
-    color:white;
-    font-size:18px;
-    text-shadow:0 0 6px #000;
+  position:absolute;top:10px;left:10px;color:white;font-size:18px;text-shadow:0 0 5px black;
 }
-
-/* ===== POPUP TEXT ===== */
 #popup{
-    position:absolute;
-    top:45%;
-    left:50%;
-    transform:translate(-50%,-50%);
-    font-size:38px;
-    font-weight:bold;
-    opacity:0;
-    pointer-events:none;
-    transition:.3s;
-    text-shadow:0 0 30px currentColor;
+  position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);
+  font-size:36px;font-weight:bold;color:white;text-shadow:0 0 20px currentColor;
+  opacity:0;pointer-events:none;transition:opacity .3s, transform .3s;
 }
-#popup.show{
-    opacity:1;
-    transform:translate(-50%,-60%);
-}
+#popup.show{opacity:1;transform:translate(-50%,-60%);}
 </style>
 </head>
-
 <body>
 <div id="game">
-
-<div id="menu">
-    <h1>MAHJONG NEON</h1>
-    <button class="menu-btn" onclick="startLevel('easy')">Łatwy</button>
-    <button class="menu-btn" onclick="startLevel('medium')">Średni</button>
-    <button class="menu-btn" onclick="startLevel('hard')">Trudny</button>
-    <button class="menu-btn" onclick="startLevel('extreme')">Ekstremalny</button>
-    <button class="menu-btn" onclick="startLevel('pro')">Zawodowy</button>
-</div>
-
-<div id="ui">
+  <div id="ui">
     Score: <span id="score">0</span><br>
     Combo: <span id="combo">1</span><br>
     Time: <span id="time">0.0</span>s
-</div>
-
-<div id="popup"></div>
-
-<div id="inventory">
+  </div>
+  <div id="popup"></div>
+  <div id="inventory">
     <div class="inv-slot"></div>
     <div class="inv-slot"></div>
     <div class="inv-slot"></div>
     <div class="inv-slot"></div>
-</div>
-
+  </div>
 </div>
 
 <script>
-/* ===== AUDIO ===== */
-const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-function beep(f,d){
- const o=audioCtx.createOscillator();
- const g=audioCtx.createGain();
- o.type="sine"; // łagodny ton
- o.frequency.value=f;
- o.connect(g); g.connect(audioCtx.destination);
- g.gain.value=.1; // delikatny
- o.start();
- setTimeout(()=>o.stop(),d*1000);
-}
-
-/* ===== DATA ===== */
+/* ================= DATA ================= */
 const colors=["#ff0033","#00e5ff","#ffee00","#00ff55","#ff00ff","#00ffaa","#ff8800","#8888ff"];
-const LEVELS={
- easy:[3,2],
- medium:[4,3,2],
- hard:[5,4,3,2],
- extreme:[6,5,4,3],
- pro:[7,6,5,4,3]
-};
-
-let layers=[],board=[],inventory=[];
-let score=0,combo=1,lastPairTime=Date.now();
+const layers=[7,6,5,4,3]; // zawodowy
+let board=[], inventory=[], score=0, combo=1, lastPairTime=Date.now(), tileSize=100;
 
 const game=document.getElementById("game");
-const menu=document.getElementById("menu");
 const scoreSpan=document.getElementById("score");
 const comboSpan=document.getElementById("combo");
 const timeSpan=document.getElementById("time");
 const popup=document.getElementById("popup");
 
-/* ===== START ===== */
-function startLevel(lvl){
- layers=LEVELS[lvl];
- menu.style.display="none";
- generate();
+/* ================= DREWNIANE DŹWIĘKI ================= */
+function woodSound(){
+  const ctx=new AudioContext();
+  const o=ctx.createOscillator();
+  const g=ctx.createGain();
+  o.type="triangle";
+  o.frequency.value=150;
+  g.gain.setValueAtTime(0.2,ctx.currentTime);
+  o.connect(g);g.connect(ctx.destination);
+  o.start();
+  g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.15);
+  o.stop(ctx.currentTime+0.15);
 }
 
-/* ===== SCORE BY TIME ===== */
+/* ================= SCORE wg CZASU + NAPIS ================= */
 function getScoreByTime(){
- const d=(Date.now()-lastPairTime)/1000;
- lastPairTime=Date.now();
- if(d<=1.4){show("YOU ARE THE LEGEND!","#ff00ff");return 500;}
- if(d<=3.5){show("IT'S IMPOSSIBLE!","#00e5ff");return 350;}
- if(d<=5){show("INSANE","#ff0033");return 250;}
- if(d<=7.5){show("AWESOME","#ffee00");return 150;}
- if(d<=10){show("NICE","#00ff55");return 100;}
- show("GOOD","#fff");return 50;
+  const diff=(Date.now()-lastPairTime)/1000;
+  lastPairTime=Date.now();
+  if(diff<=1.4){showText("YOU ARE THE LEGEND!","#ff00ff"); return 500;}
+  if(diff<=3.5){showText("IT'S IMPOSSIBLE!","#00e5ff"); return 350;}
+  if(diff<=5.0){showText("INSANE","#ff0033"); return 250;}
+  if(diff<=7.5){showText("AWESOME","#ffee00"); return 150;}
+  if(diff<=10){showText("NICE","#00ff55"); return 100;}
+  showText("GOOD","#ffffff"); return 50;
+}
+function showText(txt,color){
+  popup.textContent=txt;
+  popup.style.color=color;
+  popup.classList.add("show");
+  setTimeout(()=>popup.classList.remove("show"),800);
 }
 
-function show(t,c){
- popup.textContent=t;
- popup.style.color=c;
- popup.classList.add("show");
- setTimeout(()=>popup.classList.remove("show"),800);
-}
-
-/* ===== GAME LOGIC ===== */
+/* ================= LOGIKA ================= */
 function generate(){
- board=[];inventory=[];score=0;combo=1;
- lastPairTime=Date.now();
-
- const total=layers.reduce((a,b)=>a+b*b,0);
- let pool=[],img=1,col=0;
- while(pool.length<total){
-  for(let i=0;i<2;i++) pool.push({img,col});
-  col++; if(col>=colors.length){col=0;img++; if(img>16)img=1;}
- }
- pool.sort(()=>Math.random()-0.5);
-
- let i=0;
- layers.forEach((s,z)=>{
-  for(let y=0;y<s;y++)
-   for(let x=0;x<s;x++)
-    board.push({x,y,z,img:pool[i].img,color:colors[pool[i++].col],removed:false});
- });
- render();
+  board=[]; inventory=[]; score=0; combo=1; lastPairTime=Date.now();
+  const totalTiles=layers.reduce((a,b)=>a+b*b,0);
+  let pool=[], img=1, color=0;
+  while(pool.length<totalTiles){
+    for(let i=0;i<2;i++){pool.push({img,color});}
+    color++; if(color>=colors.length){color=0;img++; if(img>16)img=1;}
+  }
+  pool.sort(()=>Math.random()-0.5);
+  let idx=0;
+  layers.forEach((size,z)=>{
+    for(let y=0;y<size;y++)
+      for(let x=0;x<size;x++){
+        board.push({x,y,z,img:pool[idx].img,color:colors[pool[idx].color],removed:false});
+        idx++;
+      }
+  });
+  ensurePlayable(); render();
 }
 
 function isFree(t){
- if(t.removed) return false;
- if(board.some(o=>!o.removed&&o.z>t.z&&o.x===t.x&&o.y===t.y)) return false;
- const l=board.some(o=>!o.removed&&o.z===t.z&&o.x===t.x-1&&o.y===t.y);
- const r=board.some(o=>!o.removed&&o.z===t.z&&o.x===t.x+1&&o.y===t.y);
- return !(l&&r);
+  if(t.removed) return false;
+  if(board.some(o=>!o.removed && o.z>t.z &&
+    o.x>=t.x && o.x<t.x+1 && o.y>=t.y && o.y<t.y+1)) return false;
+  const left=board.some(o=>!o.removed && o.z===t.z && o.x===t.x-1 && o.y===t.y);
+  const right=board.some(o=>!o.removed && o.z===t.z && o.x===t.x+1 && o.y===t.y);
+  return !(left && right);
 }
 
-function select(t){
- if(!isFree(t)) {beep(180,.15);return;}
- beep(400,.1);
- inventory.push(t); t.removed=true;
+function select(tile){
+  if(!isFree(tile)) return;
+  woodSound();
+  inventory.push(tile); tile.removed=true;
 
- for(let i=0;i<inventory.length;i++)
-  for(let j=i+1;j<inventory.length;j++)
-   if(inventory[i].img===inventory[j].img && inventory[i].color===inventory[j].color){
-    inventory.splice(j,1); inventory.splice(i,1);
-    score+=getScoreByTime()*combo;
-    combo++;
-    beep(700,.12);
-    render(); return;
-   }
-
- if(inventory.length===4){
-  beep(220,.4);
-  alert("Ekwipunek pełny!");
-  menu.style.display="flex";
- }
- if(board.every(t=>t.removed)){
-  beep(800,.3);
-  alert("WYGRANA! SCORE: "+score);
-  menu.style.display="flex";
- }
- render();
-}
-
-/* ===== RENDER ===== */
-function render(){
- document.querySelectorAll(".tile").forEach(e=>e.remove());
-
- const max=Math.max(...layers);
- const screen=Math.min(innerWidth,innerHeight*0.8);
- const size=Math.max(80,Math.min(screen/(max+1),160));
-
- // Margines aby nie wychodziło poza ekran
- const offsetX=(innerWidth-screen)/2;
- const offsetY=(innerHeight*0.8-screen)/2;
-
- board.forEach(t=>{
-  if(t.removed) return;
-  const d=document.createElement("div");
-  d.className="tile";
-  d.style.width=size+"px";
-  d.style.height=size+"px";
-  d.style.color=t.color;
-  d.style.border="4px solid "+t.color;
-  d.style.left=Math.min(offsetX+(t.x+(max-t.z)/2)*size,innerWidth-size)+"px";
-  d.style.top=Math.min(offsetY+(t.y+(max-t.z)/2)*size,innerHeight*0.8-size)+"px";
-
-  const i=document.createElement("img");
-  i.src=`assets/images/${t.img}.png`;
-  d.appendChild(i);
-
-  if(isFree(t)) d.onclick=()=>select(t);
-  else d.style.opacity=.45;
-
-  game.appendChild(d);
- });
-
- document.querySelectorAll(".inv-slot").forEach((s,i)=>{
-  s.innerHTML="";
-  if(inventory[i]){
-   const im=document.createElement("img");
-   im.src=`assets/images/${inventory[i].img}.png`;
-   s.appendChild(im);
+  for(let i=0;i<inventory.length;i++){
+    for(let j=i+1;j<inventory.length;j++){
+      if(inventory[i].img===inventory[j].img &&
+         inventory[i].color===inventory[j].color){
+        inventory.splice(j,1); inventory.splice(i,1);
+        const gained=getScoreByTime();
+        score+=gained*combo; combo++;
+        woodSound(); render(); return;
+      }
+    }
   }
- });
-
- scoreSpan.textContent=score;
- comboSpan.textContent=combo;
+  if(inventory.length>=4){alert("Ekwipunek pełny!"); generate(); return;}
+  if(board.every(t=>t.removed)){alert("WYGRANA! SCORE: "+score); generate(); return;}
+  render();
 }
 
-/* ===== TIMER ===== */
-setInterval(()=>timeSpan.textContent=((Date.now()-lastPairTime)/1000).toFixed(1),100);
+function hasPlayablePair(){
+  const free=board.filter(t=>isFree(t));
+  for(let i=0;i<free.length;i++)
+    for(let j=i+1;j<free.length;j++)
+      if(free[i].img===free[j].img && free[i].color===free[j].color) return true;
+  return false;
+}
+
+function shuffle(){
+  const active=board.filter(t=>!t.removed);
+  const data=active.map(t=>({img:t.img,color:t.color}));
+  data.sort(()=>Math.random()-0.5);
+  active.forEach((t,i)=>{t.img=data[i].img; t.color=data[i].color;});
+}
+
+function ensurePlayable(){
+  let s=0;
+  while(!hasPlayablePair()&&s<100){shuffle(); s++;}
+}
+
+/* ================= RENDER ================= */
+function render(){
+  document.querySelectorAll(".tile").forEach(e=>e.remove());
+  const maxLayer=Math.max(...layers);
+  const screen=Math.min(innerWidth,innerHeight*0.8);
+  tileSize=Math.max(70,Math.min(screen/(maxLayer+1),140));
+  const offsetX=(innerWidth-tileSize*maxLayer)/2;
+  const offsetY=(innerHeight*0.8-tileSize*maxLayer)/2;
+
+  board.forEach(t=>{
+    if(t.removed) return;
+    const d=document.createElement("div");
+    d.className="tile";
+    d.style.width=d.style.height=tileSize+"px";
+    d.style.border="4px solid "+t.color;
+    d.style.color=t.color;
+    d.style.left=offsetX+((t.x+(maxLayer-t.z)/2)*tileSize)+"px";
+    d.style.top=offsetY+((t.y+(maxLayer-t.z)/2)*tileSize)+"px";
+    const img=document.createElement("img");
+    img.src=`assets/images/${t.img}.png`;
+    d.appendChild(img);
+    if(isFree(t)) d.onclick=()=>select(t);
+    else d.style.opacity=0.5;
+    game.appendChild(d);
+  });
+
+  document.querySelectorAll(".inv-slot").forEach((s,i)=>{
+    s.innerHTML="";
+    if(inventory[i]){
+      const img=document.createElement("img");
+      img.src=`assets/images/${inventory[i].img}.png`;
+      s.appendChild(img);
+    }
+  });
+
+  scoreSpan.textContent=score;
+  comboSpan.textContent=combo;
+}
+
+/* ================= TIMER ================= */
+setInterval(()=>{timeSpan.textContent=((Date.now()-lastPairTime)/1000).toFixed(1);},100);
+
+/* ================= START ================= */
+window.onresize=render;
+generate();
 </script>
 </body>
 </html>
