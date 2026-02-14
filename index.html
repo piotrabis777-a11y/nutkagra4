@@ -3,166 +3,284 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mahjong PRO</title>
+<title>Mahjong Neon</title>
 
 <style>
-*{box-sizing:border-box;}
-body{margin:0;font-family:Arial;background:#3b2a1d;overflow:hidden;}
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#5a3b1f;
+}
 
+#game{
+    position:relative;
+    width:100%;
+    height:100%;
+    background:radial-gradient(#7a4a25,#4a2c15);
+}
+
+/* ===== MENU ===== */
 #menu{
-    position:fixed;inset:0;
-    background:linear-gradient(135deg,#2d1b12,#4b3426);
-    display:flex;flex-direction:column;justify-content:center;align-items:center;gap:20px;
-    z-index:1000;
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.6);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    z-index:999;
 }
-#menu h1{color:white;margin-bottom:20px;}
-button{padding:15px 30px;font-size:20px;border:none;border-radius:10px;cursor:pointer;}
 
-#game{position:absolute;width:100vw;height:85vh;}
-.tile{position:absolute;border-radius:16px;background:white;transition:0.25s ease;}
-.tile:hover{transform:scale(1.05);}
-.blocked{opacity:0.3;pointer-events:none;}
-.inner{width:90%;height:90%;display:flex;align-items:center;justify-content:center;background:white;border-radius:12px;}
-.inner img{width:90%;height:90%;object-fit:contain;}
+#menu h1{
+    color:white;
+    margin-bottom:20px;
+    text-shadow:0 0 10px #000;
+}
 
+.menu-btn{
+    padding:14px 26px;
+    margin:6px;
+    font-size:18px;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    background:#fff;
+    box-shadow:0 0 10px #000;
+}
+.menu-btn:hover{transform:scale(1.05);}
+
+/* ===== TILE ===== */
+.tile{
+    position:absolute;
+    border-radius:14px;
+    background:white;
+    box-shadow:0 0 15px currentColor;
+    transition:.25s;
+    cursor:pointer;
+}
+.tile img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+}
+.tile:hover{transform:scale(1.07);}
+
+/* ===== INVENTORY ===== */
 #inventory{
-    position:absolute;bottom:0;width:100%;height:15vh;background:#2b1c12;
-    display:flex;justify-content:center;align-items:center;gap:25px;
+    position:absolute;
+    bottom:10px;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    gap:12px;
 }
-.invTile{width:70px;height:70px;background:white;border-radius:10px;display:flex;align-items:center;justify-content:center;transition:0.3s;}
+.inv-slot{
+    width:70px;
+    height:70px;
+    background:white;
+    border-radius:12px;
+    box-shadow:0 0 10px #000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.inv-slot img{width:90%;height:90%;}
 
-#scoreBoard{position:absolute;top:10px;left:10px;color:white;z-index:500;font-size:18px;}
+/* ===== UI ===== */
+#ui{
+    position:absolute;
+    top:10px;
+    left:10px;
+    color:white;
+    font-size:18px;
+    text-shadow:0 0 5px black;
+}
+
+#popup{
+    position:absolute;
+    top:45%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-size:36px;
+    font-weight:bold;
+    opacity:0;
+    pointer-events:none;
+    transition:.3s;
+}
+#popup.show{
+    opacity:1;
+    transform:translate(-50%,-60%);
+}
 </style>
 </head>
+
 <body>
+<div id="game">
 
 <div id="menu">
-<h1>MAHJONG PRO</h1>
-<button onclick="startGame('easy')">Łatwy</button>
-<button onclick="startGame('medium')">Średni</button>
-<button onclick="startGame('hard')">Trudny</button>
-<button onclick="startGame('extreme')">Ekstremalny</button>
-<button onclick="startGame('pro')">Zawodowy</button>
-<button onclick="startGame('classic')">Klasyczny (losowy)</button>
+    <h1>MAHJONG NEON</h1>
+    <button class="menu-btn" onclick="startLevel('easy')">Łatwy</button>
+    <button class="menu-btn" onclick="startLevel('medium')">Średni</button>
+    <button class="menu-btn" onclick="startLevel('hard')">Trudny</button>
+    <button class="menu-btn" onclick="startLevel('extreme')">Ekstremalny</button>
+    <button class="menu-btn" onclick="startLevel('pro')">Zawodowy</button>
+    <button class="menu-btn" onclick="startLevel('random')">Klasyczny losowy</button>
 </div>
 
-<div id="scoreBoard" style="display:none;">Score: <span id="score">0</span><br>Rekord: <span id="record">0</span></div>
-<div id="game"></div>
-<div id="inventory"></div>
+<div id="ui">
+    Score: <span id="score">0</span><br>
+    Combo: <span id="combo">1</span><br>
+    Time: <span id="time">0.0</span>s
+</div>
+
+<div id="popup"></div>
+
+<div id="inventory">
+    <div class="inv-slot"></div>
+    <div class="inv-slot"></div>
+    <div class="inv-slot"></div>
+    <div class="inv-slot"></div>
+</div>
+</div>
 
 <script>
-const COLORS=[
-"#ff2bd6","#00f7ff","#ffe600","#00ff85",
-"#ff5e00","#8c00ff","#ff004c","#00ffcc",
-"#39ff14","#ff00ff","#00b3ff","#ffcc00"
+const colors=[
+ "#ff0033","#00e5ff","#ffee00","#00ff55",
+ "#ff00ff","#00ffaa","#ff8800","#8888ff"
 ];
 
-let board=[], inventory=[], score=0, levelName="", tileSize=80, audioCtx;
+const LEVELS={
+ easy:[3,2],
+ medium:[4,3,2],
+ hard:[5,4,3,2],
+ extreme:[6,5,4,3],
+ pro:[7,6,5,4,3],
+ random:()=>Array.from({length:3+Math.random()*3},(_,i)=>5-i)
+};
 
-function initAudio(){if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();}
-function sound(freq,duration){if(!audioCtx) return; const osc=audioCtx.createOscillator(); const gain=audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.frequency.value=freq; osc.start(); gain.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+duration); osc.stop(audioCtx.currentTime+duration);}
-function preload(){for(let i=1;i<=16;i++){const img=new Image(); img.src="assets/images/"+i+".png";}} preload();
+let layers=[],board=[],inventory=[];
+let score=0,combo=1,lastPairTime=Date.now();
 
-function startGame(level){
-    initAudio();
-    document.getElementById("menu").style.display="none";
-    document.getElementById("scoreBoard").style.display="block";
-    levelName=level; score=0; inventory=[];
-    createBoard(level);
+const game=document.getElementById("game");
+const menu=document.getElementById("menu");
+const scoreSpan=document.getElementById("score");
+const comboSpan=document.getElementById("combo");
+const timeSpan=document.getElementById("time");
+const popup=document.getElementById("popup");
+
+function startLevel(lvl){
+ layers=typeof LEVELS[lvl]==="function"?LEVELS[lvl]():LEVELS[lvl];
+ menu.style.display="none";
+ generate();
 }
 
-function createBoard(level){
-    let layers=[];
-    if(level==="easy") layers=[3,2];
-    if(level==="medium") layers=[4,3,2];
-    if(level==="hard") layers=[5,4,3,2];
-    if(level==="extreme") layers=[6,5,4,3];
-    if(level==="pro") layers=[7,6,5,4,3];
-    if(level==="classic"){let count=Math.floor(Math.random()*4)+3; for(let i=0;i<count;i++) layers.push(Math.floor(Math.random()*5)+3);}
-    board=[]; let id=0;
-    layers.forEach((size,z)=>{for(let y=0;y<size;y++){for(let x=0;x<size;x++){board.push({x,y,z,id:id++});}}});
-    generateTiles();
+function getScoreByTime(){
+ const d=(Date.now()-lastPairTime)/1000;
+ lastPairTime=Date.now();
+ if(d<=1.4){show("YOU ARE THE LEGEND!","#ff00ff");return 500;}
+ if(d<=3.5){show("IT'S IMPOSSIBLE!","#00e5ff");return 350;}
+ if(d<=5){show("INSANE","#ff0033");return 250;}
+ if(d<=7.5){show("AWESOME","#ffee00");return 150;}
+ if(d<=10){show("NICE","#00ff55");return 100;}
+ show("GOOD","#fff");return 50;
 }
 
-function generateTiles(){
-    let needed=board.length; let tiles=[]; let imgIndex=0;
-    while(tiles.length<needed){
-        for(let p=0;p<4;p++){ let color=COLORS[p%COLORS.length]; tiles.push({img:imgIndex,color}); tiles.push({img:imgIndex,color}); }
-        imgIndex=(imgIndex+1)%16;
-    }
-    tiles=tiles.slice(0,needed); tiles.sort(()=>Math.random()-0.5);
-    board.forEach((pos,i)=>{pos.img=tiles[i].img; pos.color=tiles[i].color; pos.removed=false;});
-    render();
+function show(t,c){
+ popup.textContent=t;
+ popup.style.color=c;
+ popup.classList.add("show");
+ setTimeout(()=>popup.classList.remove("show"),800);
 }
 
-function isFree(tile){
-    if(tile.removed) return false;
-    const above=board.find(t=>!t.removed&&t.x===tile.x&&t.y===tile.y&&t.z===tile.z+1);
-    if(above) return false;
-    const left=board.find(t=>!t.removed&&t.x===tile.x-1&&t.y===tile.y&&t.z===tile.z);
-    const right=board.find(t=>!t.removed&&t.x===tile.x+1&&t.y===tile.y&&t.z===tile.z);
-    return !left||!right;
+function generate(){
+ board=[];inventory=[];score=0;combo=1;
+ lastPairTime=Date.now();
+
+ let total=layers.reduce((a,b)=>a+b*b,0);
+ let pool=[],img=1,col=0;
+ while(pool.length<total){
+  for(let i=0;i<2;i++) pool.push({img,col});
+  col++;if(col>=colors.length){col=0;img++;if(img>16)img=1;}
+ }
+ pool.sort(()=>Math.random()-0.5);
+
+ let i=0;
+ layers.forEach((s,z)=>{
+  for(let y=0;y<s;y++)
+   for(let x=0;x<s;x++)
+    board.push({x,y,z,img:pool[i].img,color:colors[pool[i++].col],removed:false});
+ });
+ render();
+}
+
+function isFree(t){
+ if(t.removed) return false;
+ if(board.some(o=>!o.removed&&o.z>t.z&&o.x===t.x&&o.y===t.y))return false;
+ const l=board.some(o=>!o.removed&&o.z===t.z&&o.x===t.x-1&&o.y===t.y);
+ const r=board.some(o=>!o.removed&&o.z===t.z&&o.x===t.x+1&&o.y===t.y);
+ return !(l&&r);
+}
+
+function select(t){
+ if(!isFree(t))return;
+ inventory.push(t);t.removed=true;
+
+ for(let i=0;i<inventory.length;i++)
+  for(let j=i+1;j<inventory.length;j++)
+   if(inventory[i].img===inventory[j].img&&inventory[i].color===inventory[j].color){
+    inventory.splice(j,1);inventory.splice(i,1);
+    score+=getScoreByTime()*combo;combo++;
+    render();return;
+   }
+
+ if(inventory.length===4){alert("Ekwipunek pełny");menu.style.display="flex";}
+ if(board.every(t=>t.removed)){alert("WYGRANA!");menu.style.display="flex";}
+ render();
 }
 
 function render(){
-    const container=document.getElementById("game");
-    container.innerHTML="";
-    const maxLayer=Math.max(...board.map(t=>t.z));
-    const baseSize=Math.max(...board.filter(t=>t.z===0).map(t=>t.x))+1;
-    tileSize=Math.min(window.innerWidth/(baseSize+1.5), window.innerHeight/(baseSize+5));
-    tileSize=Math.max(60, Math.min(tileSize, 120)); // min/max dla telefonów
-    board.forEach(tile=>{
-        if(tile.removed) return;
-        const div=document.createElement("div");
-        div.className="tile";
-        if(!isFree(tile)) div.classList.add("blocked");
-        div.style.width=tileSize+"px";
-        div.style.height=tileSize+"px";
-        div.style.left=((tile.x+(maxLayer-tile.z)/2)*tileSize)+"px";
-        div.style.top=((tile.y+(maxLayer-tile.z)/2)*tileSize)+"px";
-        div.style.border="4px solid "+tile.color;
-        div.style.boxShadow="0 0 18px "+tile.color;
-        div.innerHTML=`<div class="inner"><img src="assets/images/${tile.img+1}.png"></div>`;
-        div.onclick=()=>select(tile);
-        container.appendChild(div);
-    });
-    renderInventory();
+ document.querySelectorAll(".tile").forEach(e=>e.remove());
+ const max=Math.max(...layers);
+ const screen=Math.min(innerWidth,innerHeight*.8);
+ const size=Math.max(70,Math.min(screen/(max+1),140));
+
+ board.forEach(t=>{
+  if(t.removed)return;
+  const d=document.createElement("div");
+  d.className="tile";
+  d.style.width=size+"px";
+  d.style.height=size+"px";
+  d.style.border="4px solid "+t.color;
+  d.style.left=(innerWidth-screen)/2+(t.x+(max-t.z)/2)*size+"px";
+  d.style.top=(innerHeight*.8-screen)/2+(t.y+(max-t.z)/2)*size+"px";
+  const i=document.createElement("img");
+  i.src=`assets/images/${t.img}.png`;
+  d.appendChild(i);
+  if(isFree(t)) d.onclick=()=>select(t); else d.style.opacity=.4;
+  game.appendChild(d);
+ });
+
+ document.querySelectorAll(".inv-slot").forEach((s,i)=>{
+  s.innerHTML="";
+  if(inventory[i]){
+   const im=document.createElement("img");
+   im.src=`assets/images/${inventory[i].img}.png`;
+   s.appendChild(im);
+  }
+ });
+
+ scoreSpan.textContent=score;
+ comboSpan.textContent=combo;
 }
 
-function select(tile){
-    if(!isFree(tile)) return;
-    sound(400,0.1);
-    inventory.push(tile); tile.removed=true;
-    if(inventory.length===2){
-        if(inventory[0].img===inventory[1].img && inventory[0].color===inventory[1].color){
-            score+=200; sound(800,0.2); inventory=[];
-        }
-    }
-    if(inventory.length===4){sound(150,0.5); alert("Ekwipunek pełny! Restart."); resetGame(); return;}
-    if(board.every(t=>t.removed)){sound(1000,0.4); saveRecord(); alert("WYGRANA! Score: "+score); resetGame(); return;}
-    render();
-}
-
-function renderInventory(){
-    const inv=document.getElementById("inventory");
-    inv.innerHTML="";
-    inventory.forEach(tile=>{
-        const d=document.createElement("div");
-        d.className="invTile";
-        d.style.border="3px solid "+tile.color;
-        d.innerHTML=`<img src="assets/images/${tile.img+1}.png" width="90%">`;
-        inv.appendChild(d);
-    });
-    document.getElementById("score").innerText=score;
-    document.getElementById("record").innerText=localStorage.getItem("record_"+levelName)||0;
-}
-
-function saveRecord(){let key="record_"+levelName; let best=localStorage.getItem(key)||0; if(score>best){localStorage.setItem(key,score);}}
-function resetGame(){inventory=[]; score=0; createBoard(levelName);}
-window.onresize=render;
+setInterval(()=>timeSpan.textContent=((Date.now()-lastPairTime)/1000).toFixed(1),100);
 </script>
 </body>
 </html>
+
 
 
 
