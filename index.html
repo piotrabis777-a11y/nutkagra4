@@ -9,7 +9,8 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:
 #game{position:relative;width:100%;height:100%;background:url('assets/images/wood-bg.jpg') center/cover no-repeat;}
 .tile{position:absolute;border-radius:12px;background:white;cursor:pointer;transition:all .3s ease;box-sizing:border-box;box-shadow:0 0 5px #000;}
 .tile img{width:100%;height:100%;object-fit:contain;pointer-events:none;}
-.tile.free{box-shadow:0 0 20px #0ff,0 0 10px #0ff inset;}
+.tile.free{box-shadow:0 0 20px #0ff,0 0 10px #0ff inset; transform:scale(1.05);}
+.tile.locked{opacity:0.5;filter:grayscale(70%);}
 #inventory{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:12px;}
 .inv-slot{width:70px;height:70px;background:#fafafa;border-radius:12px;box-shadow:0 0 10px #000;display:flex;align-items:center;justify-content:center;}
 .inv-slot img{width:90%;height:90%;}
@@ -24,6 +25,8 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:
 @keyframes flyup{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-60px);}}
 .score-fly-multiplier{position:absolute;font-weight:bold;color:#ff0;font-size:28px;text-shadow:0 0 10px black;pointer-events:none;animation:flymult .8s forwards;}
 @keyframes flymult{0%{opacity:1;transform:scale(1) translateY(0);}100%{opacity:0;transform:scale(1.5) translateY(-60px);}}
+.particle{position:absolute;width:8px;height:8px;border-radius:50%;pointer-events:none;animation:particleFly 0.6s forwards;}
+@keyframes particleFly{0%{opacity:1;transform:translate(0,0);}100%{opacity:0;transform:translate(var(--x),var(--y)) scale(0);}}
 </style>
 </head>
 <body>
@@ -113,6 +116,7 @@ function showText(txt,color){
 // ===== GAME LOGIC =====
 function generate(){
   board=[]; inventory=[]; score=0; combo=1; lastPairTime=Date.now();
+  const maxLayer = Math.max(...layers);
   const total=layers.reduce((a,b)=>a+b*b,0);
   let pool=[], imgIndex=1, colorIndex=0;
   while(pool.length<total){
@@ -150,7 +154,6 @@ function select(tile){
   tileEl.style.left=invRect.left+"px"; tileEl.style.top=invRect.top+"px"; tileEl.style.transform="scale(0.5)";
   setTimeout(()=>{
     inventory.push(tile); tile.removed=true; tile.animating=false;
-    // check only exact match (image+color)
     for(let i=0;i<inventory.length;i++){
       for(let j=i+1;j<inventory.length;j++){
         if(inventory[i].img===inventory[j].img && inventory[i].color===inventory[j].color){
@@ -160,6 +163,7 @@ function select(tile){
           comboDisplay.style.transform="scale(1.5)";
           comboDisplay.style.color=colors[combo%colors.length];
           createFlyingMultiplier("x"+combo,invRect.left,invRect.top);
+          createFlyingParticles(invRect.left,invRect.top);
           setTimeout(()=>{comboDisplay.style.transform="scale(1)"; comboDisplay.style.color="white";},300);
           createFlyingScore("+"+(gained*combo),invRect.left,invRect.top);
           woodSound();
@@ -190,6 +194,19 @@ function ensurePlayable(){let attempts=0; while(!hasPlayablePair()&&attempts<200
 // ===== EFFECTS =====
 function createFlyingScore(text,x,y){const el=document.createElement("div"); el.className="score-fly"; el.style.left=x+"px"; el.style.top=y+"px"; el.textContent=text; game.appendChild(el); setTimeout(()=>el.remove(),800);}
 function createFlyingMultiplier(text,x,y){const el=document.createElement("div"); el.className="score-fly-multiplier"; el.style.left=x+"px"; el.style.top=y+"px"; el.textContent=text; game.appendChild(el); setTimeout(()=>el.remove(),800);}
+function createFlyingParticles(x,y){
+  for(let i=0;i<12;i++){
+    const p=document.createElement("div"); p.className="particle";
+    const angle=Math.random()*2*Math.PI;
+    const radius=50+Math.random()*20;
+    p.style.left=x+"px"; p.style.top=y+"px";
+    p.style.setProperty('--x', radius*Math.cos(angle)+'px');
+    p.style.setProperty('--y', radius*Math.sin(angle)+'px');
+    p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    game.appendChild(p);
+    setTimeout(()=>p.remove(),600);
+  }
+}
 
 // ===== RENDER =====
 function render(){
@@ -201,7 +218,7 @@ function render(){
   board.forEach(t=>{
     if(t.removed) return;
     const d=document.createElement("div");
-    d.className="tile"+(isFree(t)?" free":"");
+    d.className="tile "+(isFree(t)?"free":"locked");
     d.style.width=d.style.height=tileSize+"px";
     d.style.border="4px solid "+t.color;
     d.style.left=offsetX + (t.x+(maxLayer-t.z)/2)*tileSize+"px";
@@ -225,3 +242,4 @@ window.onresize=render;
 </script>
 </body>
 </html>
+
