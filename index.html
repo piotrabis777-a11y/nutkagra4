@@ -3,152 +3,225 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Neon Memory Blast 3D</title>
+<title>Mahjong – Stable Geometry</title>
+
 <style>
-body {margin:0; font-family:Arial,sans-serif; background:#000; color:#fff; text-align:center;}
-#menu {padding:20px;}
-#menu button {margin:10px; padding:12px 24px; font-size:18px; cursor:pointer; border:2px solid #0ff; border-radius:8px; background:#000; color:#0ff;}
-.hidden {display:none;}
-#game {padding:10px;}
-#score {font-size:20px; margin-bottom:10px;}
-#board {position:relative; width:900px; height:600px; margin:0 auto; perspective:1000px;}
-.card {width:80px; height:80px; border:4px solid #fff; border-radius:6px; background:#111; cursor:pointer; position:absolute; display:flex; align-items:center; justify-content:center;}
-.card img {max-width:70%; max-height:70%; opacity:0; transition:0.1s;}
-.card.revealed img {opacity:1;}
-.card.locked {opacity:0.3; cursor:default;}
+html,body{
+  margin:0; padding:0;
+  width:100%; height:100%;
+  overflow:hidden;
+  background:#2b2016;
+  font-family:Arial;
+}
+#game{position:relative;width:100%;height:100%;}
+.tile{
+  position:absolute;
+  background:#fff;
+  border-radius:10px;
+  box-sizing:border-box;
+}
+.tile.free{cursor:pointer;box-shadow:0 0 14px currentColor;}
+.tile.locked{opacity:.45;filter:grayscale(80%);}
+.tile img{width:100%;height:100%;pointer-events:none;}
+
+#inventory{
+  position:absolute;bottom:10px;left:50%;
+  transform:translateX(-50%);
+  display:flex;gap:10px;
+}
+.inv{width:60px;height:60px;background:#ddd;border-radius:10px;}
+.inv img{width:90%;height:90%;}
+
+#ui{position:absolute;top:10px;left:10px;color:white;}
+#popup{
+  position:absolute;top:45%;left:50%;
+  transform:translate(-50%,-50%);
+  font-size:34px;font-weight:bold;
+  opacity:0;transition:.3s;
+}
+#popup.show{opacity:1;transform:translate(-50%,-60%);}
+
+#menu{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.85);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:12px;z-index:5;
+}
+.menu-btn{padding:14px 26px;font-size:22px;border-radius:10px;}
 </style>
 </head>
+
 <body>
+<div id="game"></div>
+<div id="popup"></div>
+
+<div id="inventory">
+  <div class="inv"></div><div class="inv"></div>
+  <div class="inv"></div><div class="inv"></div>
+</div>
+
+<div id="ui">
+Score: <span id="score">0</span><br>
+Time: <span id="time">0.0</span>s
+</div>
 
 <div id="menu">
-<h1>Neon Memory Blast 3D</h1>
-<button onclick="startLevel('easy')">Łatwy (10 par)</button>
-<button onclick="startLevel('classic')">Klasyczny (20 par)</button>
-<button onclick="startLevel('medium')">Średni (30 par)</button>
-<button onclick="startLevel('hard')">Trudny (60 par)</button>
-<button onclick="startLevel('extreme')">Ekstremalny (100 par)</button>
-<button onclick="startLevel('pro')">Zawodowy (160 par)</button>
+  <button class="menu-btn" data-layers="3,2">Łatwy</button>
+  <button class="menu-btn" data-layers="4,3,2">Średni</button>
+  <button class="menu-btn" data-layers="5,4,3,2">Trudny</button>
+  <button class="menu-btn" data-layers="6,5,4,3">Zawodowy</button>
 </div>
-
-<div id="game" class="hidden">
-<div id="score">Wynik: 0</div>
-<div id="board"></div>
-<button onclick="backToMenu()">Powrót do menu</button>
-</div>
-
-<audio id="bg" src="assets/sounds/bg.mp3" loop></audio>
-<audio id="click" src="assets/sounds/click.mp3"></audio>
-<audio id="match" src="assets/sounds/match.mp3"></audio>
-<audio id="win" src="assets/sounds/win.mp3"></audio>
 
 <script>
-const colors=["#ff0","#0ff","#f0f","#0f0","#f0f"];
-const baseImagesCount=16;
-const levelConfig={easy:10,classic:20,medium:30,hard:60,extreme:100,pro:160};
-let boardEl=document.getElementById("board");
-let scoreEl=document.getElementById("score");
-let score=0, firstCard=null, lockBoard=false;
-let bgSound=document.getElementById("bg"), clickS=document.getElementById("click"), matchS=document.getElementById("match"), winS=document.getElementById("win");
+/* ===== AUDIO ===== */
+let audioCtx;
+function sound(freq,len=.1){
+  if(!audioCtx)audioCtx=new AudioContext();
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.frequency.value=freq;
+  o.type="triangle";
+  g.gain.value=.25;
+  o.connect(g);g.connect(audioCtx.destination);
+  o.start();
+  g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+len);
+  o.stop(audioCtx.currentTime+len);
+}
+const clickSound=()=>sound(420,.08);
+const pairSound=()=>sound(180,.15);
 
-function startLevel(level){
-  document.getElementById("menu").classList.add("hidden");
-  document.getElementById("game").classList.remove("hidden");
-  score=0; scoreEl.textContent="Wynik: 0";
-  bgSound.play();
-  buildPyramid(levelConfig[level]);
+/* ===== GEOMETRIA – FUNDAMENT ===== */
+function tileSize(l,w,h,p=20){
+  return Math.floor(Math.min((w-p*2)/Math.max(...l),(h-p*2)/Math.max(...l)));
+}
+function layouts(l,t,w,h){
+  const cx=w/2,cy=h/2;
+  return l.map((s,z)=>({z,s,x0:cx-(s*t)/2,y0:cy-(s*t)/2}));
 }
 
-function backToMenu(){
-  document.getElementById("menu").classList.remove("hidden");
-  document.getElementById("game").classList.add("hidden");
-  boardEl.innerHTML="";
-  bgSound.pause(); bgSound.currentTime=0;
+/* ===== GAME STATE ===== */
+let layers=[],tiles=[],inv=[],score=0,startTime=Date.now();
+const colors=["#ff0044","#00e5ff","#ffee00","#00ff55","#ff00ff","#ff8800"];
+
+const game=document.getElementById("game"),popup=document.getElementById("popup");
+
+/* ===== MAHJONG LOGIC ===== */
+function free(t){
+  const l=tiles.some(o=>!o.r&&o.z===t.z&&o.x===t.x-1&&o.y===t.y);
+  const r=tiles.some(o=>!o.r&&o.z===t.z&&o.x===t.x+1&&o.y===t.y);
+  const a=tiles.some(o=>!o.r&&o.z>t.z&&o.x===t.x&&o.y===t.y);
+  return !(l&&r)&&!a;
 }
 
-// Prosty generator piramid 3D
-function buildPyramid(pairCount){
-  let pairs=[];
-  for(let i=0;i<pairCount;i++){
-    let img=(i%baseImagesCount)+1;
-    let color=colors[i%colors.length];
-    pairs.push({img,color}); pairs.push({img,color});
+/* ===== GENERATOR ===== */
+function generate(){
+  do{create();}while(!solvable());
+  render();
+}
+
+function create(){
+  tiles=[];inv=[];score=0;startTime=Date.now();
+  let total=layers.reduce((a,s)=>a+s*s,0)+(Math.random()<.5?6:-6);
+  if(total%2)total++;
+  let pool=[],img=1,c=0;
+  while(pool.length<total){
+    pool.push({img,c});pool.push({img,c});
+    c++;if(c>=colors.length){c=0;img++;if(img>16)img=1;}
   }
-  pairs=shuffleArray(pairs);
-
-  boardEl.innerHTML="";
-  let positions=[]; // x,y,z
-  let layers=Math.ceil(Math.cbrt(pairs.length)); // liczba warstw
-  let index=0;
-  for(let z=0;z<layers;z++){
-    let rowCount=layers-z;
-    for(let y=0;y<rowCount;y++){
-      for(let x=0;x<rowCount;x++){
-        if(index>=pairs.length) break;
-        positions.push({x: x, y: y, z: z, data:pairs[index]});
-        index++;
-      }
+  pool.sort(()=>Math.random()-.5);
+  let i=0;
+  layers.forEach((s,z)=>{
+    for(let y=0;y<s;y++)for(let x=0;x<s;x++){
+      if(i>=pool.length)break;
+      const p=pool[i++];
+      tiles.push({x,y,z,img:p.img,col:colors[p.c],r:false});
     }
-  }
-
-  const offset=80; const layerShift=10;
-  positions.forEach(pos=>{
-    let card=document.createElement("div");
-    card.classList.add("card");
-    card.dataset.img=pos.data.img;
-    card.dataset.color=pos.data.color;
-    card.style.borderColor=pos.data.color;
-    card.style.left=(pos.x*offset + pos.z*layerShift)+"px";
-    card.style.top=(pos.y*offset - pos.z*layerShift)+"px";
-    card.style.zIndex=pos.z*100+pos.y*10+pos.x;
-    let imgEl=document.createElement("img");
-    imgEl.src=`assets/images/${pos.data.img}.png`;
-    card.appendChild(imgEl);
-    card.onclick=()=>flipCard(card);
-    boardEl.appendChild(card);
   });
 }
 
-// mechanika dopasowania (z logiką Mahjong: tylko wolne kafelki)
-function flipCard(card){
-  if(lockBoard||card===firstCard||card.classList.contains("locked")||!isFree(card)) return;
-  clickS.play();
-  card.classList.add("revealed");
-  if(!firstCard){firstCard=card; return;}
-  
-  if(firstCard.dataset.img===card.dataset.img&&firstCard.dataset.color===card.dataset.color){
-    score+=10; scoreEl.textContent=`Wynik: ${score}`;
-    matchS.play();
-    firstCard.classList.add("locked");
-    card.classList.add("locked");
-    resetTurn();
-    if(document.querySelectorAll('.card:not(.locked)').length===0) winS.play();
-  } else {
-    lockBoard=true;
-    setTimeout(()=>{
-      firstCard.classList.remove("revealed");
-      card.classList.remove("revealed");
-      resetTurn();
-    },1000);
+/* ===== SOLVABLE CHECK ===== */
+function solvable(){
+  let sim=tiles.map(t=>({...t}));
+  function f(t){
+    const l=sim.some(o=>!o.r&&o.z===t.z&&o.x===t.x-1&&o.y===t.y);
+    const r=sim.some(o=>!o.r&&o.z===t.z&&o.x===t.x+1&&o.y===t.y);
+    const a=sim.some(o=>!o.r&&o.z>t.z&&o.x===t.x&&o.y===t.y);
+    return !(l&&r)&&!a;
+  }
+  for(;;){
+    const freeT=sim.filter(t=>!t.r&&f(t));
+    let done=false;
+    for(let i=0;i<freeT.length;i++)
+      for(let j=i+1;j<freeT.length;j++)
+        if(freeT[i].img===freeT[j].img&&freeT[i].col===freeT[j].col){
+          freeT[i].r=freeT[j].r=true;done=true;
+        }
+    if(!done)return sim.every(t=>t.r);
   }
 }
 
-function resetTurn(){[firstCard,lockBoard]=[null,false];}
-function shuffleArray(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a;}
-
-// sprawdza czy kafelek jest wolny (Mahjong logic)
-function isFree(card){
-  let rect=card.getBoundingClientRect();
-  let cards=[...document.querySelectorAll('.card')].filter(c=>!c.classList.contains('locked')&&c!==card);
-  for(let c of cards){
-    let r=c.getBoundingClientRect();
-    if(Math.abs(rect.top - r.top)<=10 && (rect.left-r.left)==-80) return false; // lewo
-    if(Math.abs(rect.top - r.top)<=10 && (rect.left-r.left)==80) return false;  // prawo
-    if(Math.abs(rect.top - r.top)<=80 && Math.abs(rect.left - r.left)<=80 && parseInt(c.style.zIndex)>parseInt(card.style.zIndex)) return false; // nad
-  }
-  return true;
+/* ===== SELECT ===== */
+function select(t){
+  if(!free(t))return;
+  clickSound();
+  inv.push(t);t.r=true;
+  for(let i=0;i<inv.length;i++)
+    for(let j=i+1;j<inv.length;j++)
+      if(inv[i].img===inv[j].img&&inv[i].col===inv[j].col){
+        inv.splice(j,1);inv.splice(i,1);
+        pairSound();
+        popup.textContent="NICE!";
+        popup.classList.add("show");
+        setTimeout(()=>popup.classList.remove("show"),600);
+      }
+  if(inv.length>=4){alert("Ekwipunek pełny");generate();}
+  render();
 }
+
+/* ===== RENDER ===== */
+function render(){
+  game.innerHTML="";
+  const w=innerWidth,h=innerHeight*.8;
+  const ts=tileSize(layers,w,h);
+  const lay=layouts(layers,ts,w,h);
+  lay.forEach(l=>{
+    tiles.filter(t=>t.z===l.z&&!t.r).forEach(t=>{
+      const d=document.createElement("div");
+      d.className="tile "+(free(t)?"free":"locked");
+      d.style.width=d.style.height=ts+"px";
+      d.style.left=l.x0+t.x*ts+"px";
+      d.style.top=l.y0+t.y*ts+"px";
+      d.style.border="4px solid "+t.col;
+      d.style.color=t.col;
+      d.style.zIndex=100+t.z;
+      if(free(t))d.onclick=()=>select(t);
+      const im=document.createElement("img");
+      im.src=`assets/images/${t.img}.png`;
+      d.appendChild(im);
+      game.appendChild(d);
+    });
+  });
+  document.querySelectorAll(".inv").forEach((s,i)=>{
+    s.innerHTML="";
+    if(inv[i]){
+      const im=document.createElement("img");
+      im.src=`assets/images/${inv[i].img}.png`;
+      s.appendChild(im);
+    }
+  });
+  document.getElementById("score").textContent=score;
+}
+
+/* ===== MENU ===== */
+document.querySelectorAll(".menu-btn").forEach(b=>{
+  b.onclick=()=>{
+    layers=b.dataset.layers.split(",").map(Number);
+    document.getElementById("menu").style.display="none";
+    generate();
+  };
+});
+window.onresize=render;
+setInterval(()=>document.getElementById("time").textContent=((Date.now()-startTime)/1000).toFixed(1),100);
 </script>
-
 </body>
 </html>
-
