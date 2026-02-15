@@ -68,11 +68,18 @@ const pairS=document.getElementById("pair");
 
 let tiles=[], inventory=[], score=0, lastTime=0;
 
-// 7 różnych kształtów piramid: proste przesunięcia, centrowanie
-function SHAPE(n){ 
-  const shapes = [
-    [n,n],[n,n-1],[n-1,n],[n,n],[n,n],[n,n],[n,n]
-  ]; return shapes[Math.floor(Math.random()*shapes.length)];
+// 7 różnych kształtów piramid
+function getShape(n){
+  const shapes=[
+    {w:n,h:n},             // kwadrat
+    {w:n,h:n-1},           // prostokąt poziomy
+    {w:n-1,h:n},           // prostokąt pionowy
+    {w:n,h:n},             // kwadrat mały
+    {w:Math.ceil(n/2),h:n},// pionowe
+    {w:n,h:Math.ceil(n/2)},// poziome
+    {w:n-1,h:n-1}          // mniejszy kwadrat
+  ];
+  return shapes[Math.floor(Math.random()*shapes.length)];
 }
 
 function start(level){
@@ -95,9 +102,9 @@ function build(layers){
 
   layers.forEach((n,z)=>{
     const off=(max-n)/2*tileSize;
-    const shape=SHAPE(n);
-    for(let y=0;y<shape[1];y++){
-      for(let x=0;x<shape[0];x++){
+    const shape=getShape(n);
+    for(let y=0;y<shape.h;y++){
+      for(let x=0;x<shape.w;x++){
         const t=document.createElement("div"); t.className="tile";
         t.style.width=tileSize+"px"; t.style.height=tileSize+"px";
         t.style.left=off+x*tileSize+"px"; t.style.top=off+y*tileSize+"px";
@@ -162,14 +169,12 @@ function addScore(dt){
   else if(dt<=5){pts=250;msg="insane";}
   else if(dt<=7.5){pts=150;msg="awesome";}
   else if(dt<=10){pts=100;msg="nice";}
-  score+=pts;
-  animateScore(msg,pts);
+  score+=pts; animateScore(msg,pts);
 }
 
 function animateScore(msg,pts){
   msgEl.innerText=msg;
-  let start=score-pts, end=score, duration=300;
-  let startTime=null;
+  let start=score-pts, end=score, duration=300, startTime=null;
   function step(timestamp){
     if(!startTime) startTime=timestamp;
     let progress=(timestamp-startTime)/duration;
@@ -182,3 +187,4 @@ function animateScore(msg,pts){
 </script>
 </body>
 </html>
+
