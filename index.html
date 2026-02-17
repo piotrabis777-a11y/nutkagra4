@@ -77,10 +77,15 @@ Time: <span id="time">0.0</span>s
 
 <div id="menu">
   <button class="menu-btn" data-layers="3,2,square">Łatwy</button>
-  <button class="menu-btn" data-layers="4,3,circle">Średni</button>
-  <button class="menu-btn" data-layers="5,4,3,triangle">Trudny</button>
-  <button class="menu-btn" data-layers="6,5,4,pentagon">Zawodowy</button>
-  <button class="menu-btn" data-layers="4,4,3,3,cross">Klasyczny</button>
+  <button class="menu-btn" data-layers="4,3,square">Średni</button>
+  <button class="menu-btn" data-layers="5,4,3,square">Trudny</button>
+  <button class="menu-btn" data-layers="6,5,4,3,square">Zawodowy</button>
+  <button class="menu-btn" data-layers="4,4,3,3,square">Klasyczny</button>
+  <button class="menu-btn" data-layers="6,5,4,circle">Okrąg</button>
+  <button class="menu-btn" data-layers="6,5,4,cross">Krzyrz</button>
+  <button class="menu-btn" data-layers="7,6,pentagon">Pięciokąt</button>
+  <button class="menu-btn" data-layers="5,4,3,3,triangle">trójkąt</button>
+  
 </div>
 
 <script>
@@ -113,7 +118,7 @@ function layouts(l,t,w,h){
 let layers=[],tiles=[],inv=[],score=0,startTime=Date.now();
 let tileShape="square";
 const colors=["#ff0044","#00e5ff","#ffee00","#00ff55","#ff00ff","#ff8800"];
-const game=document.getElementById("game"),popup=document.getElementById("popup");
+const game=document.getElementById("gamie"),popup=document.getElementById("popup");
 
 /* ===== LOGIKA ===== */
 function free(t){
