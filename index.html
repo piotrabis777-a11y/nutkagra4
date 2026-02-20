@@ -2,263 +2,210 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mahjong – Stable Geometry</title>
-
+<title>Case Opener</title>
 <style>
-html,body{
-  margin:0;padding:0;
-  width:100%;height:100%;
-  overflow:hidden;
-  background:#2b2016;
-  font-family:Arial;
-}
-#game{position:relative;width:100%;height:100%;}
-.tile{
-  position:absolute;
-  background:#fff;
-  box-sizing:border-box;
-}
-.tile.free{cursor:pointer;box-shadow:0 0 14px currentColor;}
-.tile.locked{opacity:.45;filter:grayscale(80%);}
-.tile img{width:100%;height:100%;pointer-events:none;}
+    * {
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+    }
 
-#inventory{
-  position:absolute;bottom:10px;left:50%;
-  transform:translateX(-50%);
-  display:flex;gap:10px;
-}
-.inv{width:60px;height:60px;background:#ddd;border-radius:10px;}
-.inv img{width:90%;height:90%;}
+    body {
+        background: radial-gradient(circle at top, #1b1b2b, #090912);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 30px;
+        overflow-x: hidden;
+    }
 
-#ui{position:absolute;top:10px;left:10px;color:white;}
-#popup{
-  position:absolute;top:45%;left:50%;
-  transform:translate(-50%,-50%);
-  font-size:34px;font-weight:bold;
-  opacity:0;transition:.3s;
-}
-#popup.show{opacity:1;transform:translate(-50%,-60%);}
+    h1 {
+        margin-bottom: 20px;
+    }
 
-/* ===== MENU ===== */
-#menu{
-  position:absolute;inset:0;
-  background:rgba(0,0,0,.85);
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  align-content:center;
-  gap:12px;
-  padding:20px;
-  z-index:5;
-}
-.menu-btn{
-  padding:14px 26px;
-  font-size:22px;
-  border-radius:10px;
-  min-width:180px;
-}
+    /* ===== CASE ===== */
+    .case {
+        position: relative;
+        width: 900px;
+        height: 180px;
+        overflow: hidden;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #111, #1c1c1c);
+        box-shadow: 0 0 40px rgba(0,0,0,.8);
+        margin-bottom: 20px;
+    }
+
+    /* CLAMP */
+    .clamp {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 4px;
+        height: 100%;
+        background: gold;
+        z-index: 10;
+        box-shadow: 0 0 15px gold;
+    }
+
+    .tape {
+        display: flex;
+        align-items: center;
+        height: 100%;
+        gap: 14px;
+        padding: 0 400px;
+        transition: transform 6s cubic-bezier(.1,.7,.1,1);
+    }
+
+    .item {
+        width: 120px;
+        height: 120px;
+        border-radius: 12px;
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .item img {
+        width: 80%;
+        height: auto;
+    }
+
+    /* ===== RARITIES ===== */
+    .common { border: 3px solid #555; }
+    .rare { border: 3px solid #3fa9ff; box-shadow: 0 0 10px #3fa9ff; }
+    .epic { border: 3px solid #b84dff; box-shadow: 0 0 18px #b84dff; }
+    .mythic { border: 5px solid red; box-shadow: 0 0 25px red; }
+    .legendary {
+        border: 5px solid gold;
+        animation: glow 1.2s infinite alternate;
+    }
+
+    @keyframes glow {
+        from { box-shadow: 0 0 10px gold; }
+        to { box-shadow: 0 0 30px gold; }
+    }
+
+    /* ===== UI ===== */
+    button {
+        padding: 14px 30px;
+        font-size: 18px;
+        border-radius: 10px;
+        border: none;
+        background: linear-gradient(45deg, gold, orange);
+        cursor: pointer;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+
+    .result {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        margin-top: 20px;
+    }
+
+    .result .item {
+        width: 160px;
+        height: 160px;
+    }
+
+    .price {
+        font-size: 28px;
+        font-weight: bold;
+        color: gold;
+    }
 </style>
 </head>
-
 <body>
-<div id="game"></div>
-<div id="popup"></div>
 
-<div id="inventory">
-  <div class="inv"></div><div class="inv"></div>
-  <div class="inv"></div><div class="inv"></div>
+<h1>🎁 Case Opener</h1>
+
+<div class="case">
+    <div class="clamp"></div>
+    <div class="tape" id="tape"></div>
 </div>
 
-<div id="ui">
-Score: <span id="score">0</span><br>
-Time: <span id="time">0.0</span>s
-</div>
+<button onclick="openCase()">OTWÓRZ SKRZYNIĘ</button>
 
-<div id="menu">
-  <button class="menu-btn" data-layers="3,2,square">Łatwy</button>
-  <button class="menu-btn" data-layers="4,3,square">Średni</button>
-  <button class="menu-btn" data-layers="5,4,3,square">Trudny</button>
-  <button class="menu-btn" data-layers="6,5,4,3,square">Zawodowy</button>
-  <button class="menu-btn" data-layers="4,4,3,3,square">Klasyczny</button>
-  <button class="menu-btn" data-layers="6,5,4,circle">Okrąg</button>
-  <button class="menu-btn" data-layers="6,5,4,cross">Krzyrz</button>
-  <button class="menu-btn" data-layers="7,6,pentagon">Pięciokąt</button>
-  <button class="menu-btn" data-layers="5,4,3,3,triangle">trójkąt</button>
-  
-</div>
+<div class="result" id="result"></div>
 
 <script>
-/* ===== AUDIO ===== */
-let audioCtx;
-function sound(freq,len=.1){
-  if(!audioCtx)audioCtx=new AudioContext();
-  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-  o.frequency.value=freq;
-  o.type="triangle";
-  g.gain.value=.25;
-  o.connect(g);g.connect(audioCtx.destination);
-  o.start();
-  g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+len);
-  o.stop(audioCtx.currentTime+len);
-}
-const clickSound=()=>sound(420,.08);
-const pairSound=()=>sound(180,.15);
+const images = Array.from({length:16}, (_,i)=>`assets/images/${i+1}.png`);
 
-/* ===== GEOMETRIA ===== */
-function tileSize(l,w,h,p=20){
-  return Math.floor(Math.min((w-p*2)/Math.max(...l),(h-p*2)/Math.max(...l)));
-}
-function layouts(l,t,w,h){
-  const cx=w/2,cy=h/2;
-  return l.map((s,z)=>({z,s,x0:cx-(s*t)/2,y0:cy-(s*t)/2}));
-}
+const rarities = [
+    {name:'common', chance:70, multiplier:1},
+    {name:'rare', chance:15, multiplier:3},
+    {name:'epic', chance:10, multiplier:7},
+    {name:'mythic', chance:4, multiplier:10},
+    {name:'legendary', chance:1, multiplier:30}
+];
 
-/* ===== GAME STATE ===== */
-let layers=[],tiles=[],inv=[],score=0,startTime=Date.now();
-let tileShape="square";
-const colors=["#ff0044","#00e5ff","#ffee00","#00ff55","#ff00ff","#ff8800"];
-const game=document.getElementById("gamie"),popup=document.getElementById("popup");
+const basePrice = 10;
+const tape = document.getElementById("tape");
+const resultBox = document.getElementById("result");
 
-/* ===== LOGIKA ===== */
-function free(t){
-  const l=tiles.some(o=>!o.r&&o.z===t.z&&o.x===t.x-1&&o.y===t.y);
-  const r=tiles.some(o=>!o.r&&o.z===t.z&&o.x===t.x+1&&o.y===t.y);
-  const a=tiles.some(o=>!o.r&&o.z>t.z&&o.x===t.x&&o.y===t.y);
-  return !(l&&r)&&!a;
-}
-
-/* ===== GENERATOR ===== */
-function generate(){
-  do{create();}while(!solvable());
-  render();
-}
-
-function create(){
-  tiles=[];inv=[];score=0;startTime=Date.now();
-  let total=layers.reduce((a,s)=>a+s*s,0);
-  if(total%2)total++;
-  let pool=[],img=1,c=0;
-  while(pool.length<total){
-    pool.push({img,c},{img,c});
-    c++;if(c>=colors.length){c=0;img++;if(img>16)img=1;}
-  }
-  pool.sort(()=>Math.random()-.5);
-  let i=0;
-  layers.forEach((s,z)=>{
-    for(let y=0;y<s;y++)for(let x=0;x<s;x++){
-      const p=pool[i++]; if(!p)break;
-      tiles.push({x,y,z,img:p.img,col:colors[p.c],r:false});
+function rollRarity() {
+    let r = Math.random()*100;
+    let sum = 0;
+    for (let rarity of rarities) {
+        sum += rarity.chance;
+        if (r <= sum) return rarity;
     }
-  });
 }
 
-/* ===== SOLVABLE ===== */
-function solvable(){
-  let sim=tiles.map(t=>({...t}));
-  function f(t){
-    const l=sim.some(o=>!o.r&&o.z===t.z&&o.x===t.x-1&&o.y===t.y);
-    const r=sim.some(o=>!o.r&&o.z===t.z&&o.x===t.x+1&&o.y===t.y);
-    const a=sim.some(o=>!o.r&&o.z>t.z&&o.x===t.x&&o.y===t.y);
-    return !(l&&r)&&!a;
-  }
-  for(;;){
-    const freeT=sim.filter(t=>!t.r&&f(t));
-    let done=false;
-    for(let i=0;i<freeT.length;i++)
-      for(let j=i+1;j<freeT.length;j++)
-        if(freeT[i].img===freeT[j].img){
-          freeT[i].r=freeT[j].r=true;
-          done=true;
-        }
-    if(!done) return sim.every(t=>t.r);
-  }
+function randomItem() {
+    return {
+        img: images[Math.floor(Math.random()*images.length)],
+        rarity: rollRarity()
+    };
 }
 
-/* ===== SELECT ===== */
-function select(t){
-  if(!free(t))return;
-  clickSound();
-  inv.push(t);t.r=true;
-  for(let i=0;i<inv.length;i++)
-    for(let j=i+1;j<inv.length;j++)
-      if(inv[i].img===inv[j].img){
-        inv.splice(j,1);inv.splice(i,1);
-        pairSound();
-      }
-  if(inv.length>=4){alert("Ekwipunek pełny");generate();}
-  render();
+function createItem(item) {
+    const div = document.createElement("div");
+    div.className = `item ${item.rarity.name}`;
+    const img = document.createElement("img");
+    img.src = item.img;
+    div.appendChild(img);
+    return div;
 }
 
-/* ===== RENDER ===== */
-function render(){
-  game.innerHTML="";
-  const w=innerWidth,h=innerHeight*.8;
-  const ts=tileSize(layers,w,h);
-  const lay=layouts(layers,ts,w,h);
+function openCase() {
+    tape.style.transition = "none";
+    tape.style.transform = "translateX(0)";
+    tape.innerHTML = "";
+    resultBox.innerHTML = "";
 
-  lay.forEach(l=>{
-    tiles.filter(t=>t.z===l.z&&!t.r).forEach(t=>{
-      const d=document.createElement("div");
-      d.className="tile "+(free(t)?"free":"locked");
-      d.style.width=d.style.height=ts+"px";
-      d.style.left=l.x0+t.x*ts+"px";
-      d.style.top=l.y0+t.y*ts+"px";
-      d.style.border="4px solid "+t.col;
-      d.style.color=t.col;
-      d.style.zIndex=100+t.z;
-
-      /* ===== KSZTAŁTY ===== */
-      d.style.borderRadius="0";
-      d.style.clipPath="none";
-
-      if(tileShape==="circle"){
-        d.style.borderRadius="50%";
-      }
-      if(tileShape==="triangle"){
-        d.style.clipPath="polygon(50% 0%,0% 100%,100% 100%)";
-      }
-      if(tileShape==="pentagon"){
-        d.style.clipPath="polygon(50% 0%,100% 38%,82% 100%,18% 100%,0% 38%)";
-      }
-      if(tileShape==="cross"){
-        d.style.clipPath="polygon(30% 0%,70% 0%,70% 30%,100% 30%,100% 70%,70% 70%,70% 100%,30% 100%,30% 70%,0% 70%,0% 30%,30% 30%)";
-      }
-
-      if(free(t))d.onclick=()=>select(t);
-
-      const im=document.createElement("img");
-      im.src=`assets/images/${t.img}.png`;
-      d.appendChild(im);
-      game.appendChild(d);
-    });
-  });
-}
-
-/* ===== MENU ===== */
-document.querySelectorAll(".menu-btn").forEach(b=>{
-  b.onclick=()=>{
-    const raw=b.dataset.layers.split(",");
-    const last=raw[raw.length-1];
-
-    if(isNaN(last)){
-      tileShape=last;
-      layers=raw.slice(0,-1).map(Number);
-    }else{
-      tileShape="square";
-      layers=raw.map(Number);
+    const items = [];
+    for (let i=0;i<40;i++) {
+        const item = randomItem();
+        items.push(item);
+        tape.appendChild(createItem(item));
     }
 
-    document.getElementById("menu").style.display="none";
-    generate();
-  };
-});
+    const winIndex = 30;
+    const winItem = items[winIndex];
 
-window.onresize=render;
-setInterval(()=>{
-  document.getElementById("time").textContent=
-    ((Date.now()-startTime)/1000).toFixed(1);
-},100);
+    setTimeout(()=>{
+        tape.style.transition = "transform 6s cubic-bezier(.1,.7,.1,1)";
+        tape.style.transform = `translateX(-${winIndex*134}px)`;
+    },50);
+
+    setTimeout(()=>{
+        const price = basePrice * winItem.rarity.multiplier;
+        const resItem = createItem(winItem);
+        resultBox.appendChild(resItem);
+
+        const priceDiv = document.createElement("div");
+        priceDiv.className = "price";
+        priceDiv.textContent = `💰 ${price} $`;
+        resultBox.appendChild(priceDiv);
+    },6200);
+}
 </script>
+
 </body>
 </html>
