@@ -3,126 +3,148 @@
 <head>
 <meta charset="UTF-8">
 <title>Case Opener</title>
+
 <style>
-    * {
-        box-sizing: border-box;
-        font-family: Arial, sans-serif;
-    }
+* {
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
 
-    body {
-        background: radial-gradient(circle at top, #1b1b2b, #090912);
-        color: white;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 30px;
-        overflow-x: hidden;
-    }
+body {
+    background: radial-gradient(circle at top, #1b1b2b, #08080f);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px;
+    overflow-x: hidden;
+}
 
-    h1 {
-        margin-bottom: 20px;
-    }
+h1 {
+    margin-bottom: 10px;
+}
 
-    /* ===== CASE ===== */
-    .case {
-        position: relative;
-        width: 900px;
-        height: 180px;
-        overflow: hidden;
-        border-radius: 16px;
-        background: linear-gradient(180deg, #111, #1c1c1c);
-        box-shadow: 0 0 40px rgba(0,0,0,.8);
-        margin-bottom: 20px;
-    }
+.balance {
+    font-size: 22px;
+    margin-bottom: 20px;
+    color: #ffd700;
+    font-weight: bold;
+}
 
-    /* CLAMP */
-    .clamp {
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 4px;
-        height: 100%;
-        background: gold;
-        z-index: 10;
-        box-shadow: 0 0 15px gold;
-    }
+/* ===== CASE ===== */
+.case {
+    position: relative;
+    width: 900px;
+    height: 180px;
+    overflow: hidden;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #111, #1c1c1c);
+    box-shadow: 0 0 40px rgba(0,0,0,.8);
+    margin-bottom: 20px;
+}
 
-    .tape {
-        display: flex;
-        align-items: center;
-        height: 100%;
-        gap: 14px;
-        padding: 0 400px;
-        transition: transform 6s cubic-bezier(.1,.7,.1,1);
-    }
+.clamp {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 100%;
+    background: gold;
+    z-index: 10;
+    box-shadow: 0 0 15px gold;
+}
 
-    .item {
-        width: 120px;
-        height: 120px;
-        border-radius: 12px;
-        background: #000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        flex-shrink: 0;
-    }
+.tape {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    gap: 14px;
+    padding: 0 400px;
+    transition: transform 6s cubic-bezier(.1,.7,.1,1);
+}
 
-    .item img {
-        width: 80%;
-        height: auto;
-    }
+.item {
+    width: 120px;
+    height: 120px;
+    border-radius: 12px;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+}
 
-    /* ===== RARITIES ===== */
-    .common { border: 3px solid #555; }
-    .rare { border: 3px solid #3fa9ff; box-shadow: 0 0 10px #3fa9ff; }
-    .epic { border: 3px solid #b84dff; box-shadow: 0 0 18px #b84dff; }
-    .mythic { border: 5px solid red; box-shadow: 0 0 25px red; }
-    .legendary {
-        border: 5px solid gold;
-        animation: glow 1.2s infinite alternate;
-    }
+.item img {
+    width: 80%;
+    height: auto;
+}
 
-    @keyframes glow {
-        from { box-shadow: 0 0 10px gold; }
-        to { box-shadow: 0 0 30px gold; }
-    }
+/* ===== RARITIES ===== */
+.common { border: 3px solid #555; }
 
-    /* ===== UI ===== */
-    button {
-        padding: 14px 30px;
-        font-size: 18px;
-        border-radius: 10px;
-        border: none;
-        background: linear-gradient(45deg, gold, orange);
-        cursor: pointer;
-        font-weight: bold;
-        margin-bottom: 20px;
-    }
+.rare {
+    border: 3px solid #3fa9ff;
+    box-shadow: 0 0 10px #3fa9ff;
+}
 
-    .result {
-        display: flex;
-        gap: 20px;
-        align-items: center;
-        margin-top: 20px;
-    }
+.epic {
+    border: 3px solid #b84dff;
+    box-shadow: 0 0 18px #b84dff;
+}
 
-    .result .item {
-        width: 160px;
-        height: 160px;
-    }
+.mythic {
+    border: 5px solid red;
+    box-shadow: 0 0 28px red;
+}
 
-    .price {
-        font-size: 28px;
-        font-weight: bold;
-        color: gold;
-    }
+.legendary {
+    border: 5px solid gold;
+    animation: glow 1.2s infinite alternate;
+}
+
+@keyframes glow {
+    from { box-shadow: 0 0 10px gold; }
+    to { box-shadow: 0 0 35px gold; }
+}
+
+/* ===== UI ===== */
+button {
+    padding: 14px 30px;
+    font-size: 18px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(45deg, gold, orange);
+    cursor: pointer;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.result {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.result .item {
+    width: 160px;
+    height: 160px;
+}
+
+.price {
+    font-size: 28px;
+    font-weight: bold;
+    color: gold;
+}
 </style>
 </head>
+
 <body>
 
 <h1>🎁 Case Opener</h1>
+<div class="balance">💰 Łącznie zdobyte: <span id="balance">0</span> $</div>
 
 <div class="case">
     <div class="clamp"></div>
@@ -134,22 +156,29 @@
 <div class="result" id="result"></div>
 
 <script>
-const images = Array.from({length:16}, (_,i)=>`assets/images/${i+1}.png`);
+/* ===== DATA ===== */
+const images = Array.from({ length: 16 }, (_, i) => ({
+    src: `assets/images/${i + 1}.png`,
+    basePrice: i + 1
+}));
 
 const rarities = [
-    {name:'common', chance:70, multiplier:1},
-    {name:'rare', chance:15, multiplier:3},
-    {name:'epic', chance:10, multiplier:7},
-    {name:'mythic', chance:4, multiplier:10},
-    {name:'legendary', chance:1, multiplier:30}
+    { name: 'common', chance: 70, multiplier: 1 },
+    { name: 'rare', chance: 15, multiplier: 3 },
+    { name: 'epic', chance: 10, multiplier: 7 },
+    { name: 'mythic', chance: 4, multiplier: 10 },
+    { name: 'legendary', chance: 1, multiplier: 30 }
 ];
 
-const basePrice = 10;
 const tape = document.getElementById("tape");
 const resultBox = document.getElementById("result");
+const balanceEl = document.getElementById("balance");
 
+let totalBalance = 0;
+
+/* ===== LOGIC ===== */
 function rollRarity() {
-    let r = Math.random()*100;
+    let r = Math.random() * 100;
     let sum = 0;
     for (let rarity of rarities) {
         sum += rarity.chance;
@@ -158,21 +187,28 @@ function rollRarity() {
 }
 
 function randomItem() {
+    const img = images[Math.floor(Math.random() * images.length)];
+    const rarity = rollRarity();
     return {
-        img: images[Math.floor(Math.random()*images.length)],
-        rarity: rollRarity()
+        img: img.src,
+        basePrice: img.basePrice,
+        rarity,
+        price: img.basePrice * rarity.multiplier
     };
 }
 
 function createItem(item) {
     const div = document.createElement("div");
     div.className = `item ${item.rarity.name}`;
+
     const img = document.createElement("img");
     img.src = item.img;
+
     div.appendChild(img);
     return div;
 }
 
+/* ===== OPEN CASE ===== */
 function openCase() {
     tape.style.transition = "none";
     tape.style.transform = "translateX(0)";
@@ -180,7 +216,8 @@ function openCase() {
     resultBox.innerHTML = "";
 
     const items = [];
-    for (let i=0;i<40;i++) {
+
+    for (let i = 0; i < 40; i++) {
         const item = randomItem();
         items.push(item);
         tape.appendChild(createItem(item));
@@ -189,21 +226,26 @@ function openCase() {
     const winIndex = 30;
     const winItem = items[winIndex];
 
-    setTimeout(()=>{
+    setTimeout(() => {
         tape.style.transition = "transform 6s cubic-bezier(.1,.7,.1,1)";
-        tape.style.transform = `translateX(-${winIndex*134}px)`;
-    },50);
+        tape.style.transform = `translateX(-${winIndex * 134}px)`;
+    }, 50);
 
-    setTimeout(()=>{
-        const price = basePrice * winItem.rarity.multiplier;
+    setTimeout(() => {
         const resItem = createItem(winItem);
         resultBox.appendChild(resItem);
 
         const priceDiv = document.createElement("div");
         priceDiv.className = "price";
-        priceDiv.textContent = `💰 ${price} $`;
+        priceDiv.innerHTML = `
+            💰 ${winItem.price}$<br>
+            <small>${winItem.basePrice}$ × ${winItem.rarity.multiplier}</small>
+        `;
         resultBox.appendChild(priceDiv);
-    },6200);
+
+        totalBalance += winItem.price;
+        balanceEl.textContent = totalBalance;
+    }, 6200);
 }
 </script>
 
