@@ -2,133 +2,129 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Case Opener</title>
+<title>Case Opener Game</title>
 
 <style>
-* {
-    box-sizing: border-box;
-    font-family: Arial, Helvetica, sans-serif;
-}
+* { box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; }
 
 body {
-    background: radial-gradient(circle at top, #1b1b2b, #08080f);
-    color: white;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 30px;
-    overflow-x: hidden;
+    margin:0;
+    background: radial-gradient(circle at top,#1b1b2b,#08080f);
+    color:white;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:30px;
 }
 
-h1 {
-    margin-bottom: 10px;
+/* ===== COMMON ===== */
+.hidden { display:none; }
+button {
+    padding:14px 26px;
+    font-size:18px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    background:linear-gradient(45deg,gold,orange);
+    font-weight:bold;
 }
+button:disabled { opacity:.5; cursor:not-allowed; }
 
 .balance {
-    font-size: 22px;
-    margin-bottom: 20px;
-    color: gold;
-    font-weight: bold;
+    font-size:22px;
+    color:gold;
+    font-weight:bold;
+    margin-bottom:20px;
 }
 
-/* ===== CASE ===== */
+/* ===== LOBBY ===== */
+#lobby {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+    width:100%;
+    max-width:900px;
+}
+
+.case-card {
+    background:#111;
+    border-radius:14px;
+    padding:20px;
+    text-align:center;
+    box-shadow:0 0 20px rgba(0,0,0,.6);
+}
+
+.case-card h3 { margin:10px 0; }
+.case-price { color:gold; margin-bottom:10px; }
+
+/* ===== CASE VIEW ===== */
 .case {
-    position: relative;
-    width: 900px;
-    height: 180px;
-    overflow: hidden;
-    border-radius: 16px;
-    background: linear-gradient(180deg, #111, #1c1c1c);
-    box-shadow: 0 0 40px rgba(0,0,0,.8);
-    margin-bottom: 20px;
+    position:relative;
+    width:900px;
+    height:180px;
+    overflow:hidden;
+    border-radius:16px;
+    background:linear-gradient(180deg,#111,#1c1c1c);
+    box-shadow:0 0 40px rgba(0,0,0,.8);
+    margin-bottom:20px;
 }
 
 .clamp {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 100%;
-    background: gold;
-    z-index: 10;
-    box-shadow: 0 0 15px gold;
+    position:absolute;
+    top:0; left:50%;
+    transform:translateX(-50%);
+    width:4px; height:100%;
+    background:gold;
+    box-shadow:0 0 15px gold;
+    z-index:10;
 }
 
 .tape {
-    display: flex;
-    align-items: center;
-    height: 100%;
-    gap: 14px;
-    padding: 0 400px;
-    transition: transform 6s cubic-bezier(.1,.7,.1,1);
+    display:flex;
+    align-items:center;
+    height:100%;
+    gap:14px;
+    padding:0 400px;
+    transition:transform 6s cubic-bezier(.1,.7,.1,1);
 }
 
 .item {
-    width: 120px;
-    height: 120px;
-    border-radius: 12px;
-    background: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    flex-shrink: 0;
+    width:120px;
+    height:120px;
+    background:#000;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
 }
-
-.item img {
-    width: 80%;
-}
+.item img { width:80%; }
 
 /* ===== RARITIES ===== */
-.common { border: 3px solid #555; }
-.rare { border: 3px solid #3fa9ff; box-shadow: 0 0 10px #3fa9ff; }
-.epic { border: 3px solid #b84dff; box-shadow: 0 0 18px #b84dff; }
-.mythic { border: 5px solid red; box-shadow: 0 0 28px red; }
-
+.common { border:3px solid #555; }
+.rare { border:3px solid #3fa9ff; box-shadow:0 0 10px #3fa9ff; }
+.epic { border:3px solid #b84dff; box-shadow:0 0 18px #b84dff; }
+.mythic { border:5px solid red; box-shadow:0 0 28px red; }
 .legendary {
-    border: 5px solid gold;
-    animation: glow 1.2s infinite alternate;
+    border:5px solid gold;
+    animation:glow 1.2s infinite alternate;
 }
-
 @keyframes glow {
-    from { box-shadow: 0 0 10px gold; }
-    to { box-shadow: 0 0 35px gold; }
-}
-
-/* ===== UI ===== */
-button {
-    padding: 14px 30px;
-    font-size: 18px;
-    border-radius: 10px;
-    border: none;
-    background: linear-gradient(45deg, gold, orange);
-    cursor: pointer;
-    font-weight: bold;
-    margin-bottom: 20px;
-}
-
-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    from{box-shadow:0 0 10px gold;}
+    to{box-shadow:0 0 35px gold;}
 }
 
 .result {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    margin-top: 20px;
+    display:flex;
+    gap:20px;
+    align-items:center;
 }
-
-.result .item {
-    width: 160px;
-    height: 160px;
-}
+.result .item { width:160px; height:160px; }
 
 .price {
-    font-size: 28px;
-    font-weight: bold;
-    color: gold;
+    font-size:28px;
+    font-weight:bold;
+    color:gold;
 }
 </style>
 </head>
@@ -136,135 +132,225 @@ button:disabled {
 <body>
 
 <h1>🎁 Case Opener</h1>
-<div class="balance">💰 Łącznie zdobyte: <span id="balance">0</span> $</div>
+<div class="balance">💰 Saldo: <span id="balance">100</span> $</div>
 
-<div class="case">
-    <div class="clamp"></div>
-    <div class="tape" id="tape"></div>
+<!-- ===== LOBBY ===== -->
+<div id="lobby"></div>
+
+<!-- ===== GAME ===== -->
+<div id="game" class="hidden">
+    <div class="case">
+        <div class="clamp"></div>
+        <div class="tape" id="tape"></div>
+    </div>
+
+    <button id="openBtn">OTWÓRZ SKRZYNKĘ</button>
+    <button onclick="backToLobby()">⬅ POWRÓT</button>
+
+    <div class="result" id="result"></div>
 </div>
 
-<button id="openBtn">OTWÓRZ SKRZYNIĘ</button>
-
-<div class="result" id="result"></div>
-
-<!-- 🔊 DŹWIĘKI -->
 <audio id="clickSound" src="assets/sounds/click.mp3"></audio>
 <audio id="dropSound" src="assets/sounds/drop.mp3"></audio>
 
 <script>
-/* ===== DATA ===== */
-const images = Array.from({ length: 16 }, (_, i) => ({
-    src: `assets/images/${i + 1}.png`,
-    basePrice: i + 1
+/* ===== GLOBAL ===== */
+const images = Array.from({length:16},(_,i)=>({
+    src:`assets/images/${i+1}.png`,
+    base:i+1
 }));
 
-const rarities = [
-    { name: 'common', chance: 70, multiplier: 1 },
-    { name: 'rare', chance: 15, multiplier: 3 },
-    { name: 'epic', chance: 10, multiplier: 7 },
-    { name: 'mythic', chance: 4, multiplier: 10 },
-    { name: 'legendary', chance: 1, multiplier: 30 }
-];
-
+const balanceEl = document.getElementById("balance");
+const lobbyEl = document.getElementById("lobby");
+const gameEl = document.getElementById("game");
 const tape = document.getElementById("tape");
 const resultBox = document.getElementById("result");
-const balanceEl = document.getElementById("balance");
 const openBtn = document.getElementById("openBtn");
 
 const clickSound = document.getElementById("clickSound");
 const dropSound = document.getElementById("dropSound");
 
-let totalBalance = 0;
+let balance = 100;
+let activeCase = null;
 let canClick = true;
 
-/* ===== LOGIC ===== */
-function rollRarity() {
-    let r = Math.random() * 100;
-    let sum = 0;
-    for (let rarity of rarities) {
-        sum += rarity.chance;
-        if (r <= sum) return rarity;
+/* ===== CASE DEFINITIONS ===== */
+const cases = [
+{
+    name:"Normal Case",
+    price:0,
+    maxImg:3,
+    chances:[
+        {name:'common',chance:90,m:1},
+        {name:'rare',chance:9,m:3},
+        {name:'epic',chance:1,m:7}
+    ]
+},
+{
+    name:"Bronze Case",
+    price:50,
+    maxImg:5,
+    chances:[
+        {name:'common',80,m:1},
+        {name:'rare',15,m:3},
+        {name:'epic',4,m:7},
+        {name:'mythic',1,m:10}
+    ]
+},
+{
+    name:"Classic Case",
+    price:3,
+    maxImg:8,
+    chances:[
+        {name:'common',70,m:1},
+        {name:'rare',15,m:3},
+        {name:'epic',10,m:7},
+        {name:'mythic',4,m:10},
+        {name:'legendary',1,m:30}
+    ]
+},
+{
+    name:"Silver Case",
+    price:12,
+    maxImg:10,
+    chances:[
+        {name:'common',50,m:1},
+        {name:'rare',30,m:3},
+        {name:'epic',15,m:7},
+        {name:'mythic',4,m:10},
+        {name:'legendary',1,m:30}
+    ]
+},
+{
+    name:"Holy 50/50",
+    price:15,
+    maxImg:1,
+    chances:[
+        {name:'common',50,m:1},
+        {name:'legendary',50,m:30}
+    ]
+},
+{
+    name:"Golden Case",
+    price:20,
+    maxImg:16,
+    chances:[
+        {name:'common',30,m:1},
+        {name:'rare',30,m:3},
+        {name:'epic',30,m:7},
+        {name:'mythic',9,m:10},
+        {name:'legendary',1,m:30}
+    ]
+}
+];
+
+/* ===== LOBBY ===== */
+function renderLobby(){
+    lobbyEl.innerHTML="";
+    cases.forEach((c,i)=>{
+        const div=document.createElement("div");
+        div.className="case-card";
+        div.innerHTML=`
+            <h3>${c.name}</h3>
+            <div class="case-price">${c.price}$</div>
+            <button onclick="enterCase(${i})">WYBIERZ</button>
+        `;
+        lobbyEl.appendChild(div);
+    });
+}
+renderLobby();
+
+/* ===== ENTER CASE ===== */
+function enterCase(index){
+    const c=cases[index];
+    if(balance<c.price){ alert("Brak środków"); return; }
+    activeCase=c;
+    balance-=c.price;
+    balanceEl.textContent=balance;
+    lobbyEl.classList.add("hidden");
+    gameEl.classList.remove("hidden");
+}
+
+/* ===== BACK ===== */
+function backToLobby(){
+    gameEl.classList.add("hidden");
+    lobbyEl.classList.remove("hidden");
+    resultBox.innerHTML="";
+}
+
+/* ===== ROLL ===== */
+function rollRarity(){
+    let r=Math.random()*100, s=0;
+    for(const c of activeCase.chances){
+        s+=c.chance;
+        if(r<=s) return c;
     }
 }
 
-function randomItem() {
-    const img = images[Math.floor(Math.random() * images.length)];
-    const rarity = rollRarity();
+function randomItem(){
+    const img=images[Math.floor(Math.random()*activeCase.maxImg)];
+    const rarity=rollRarity();
     return {
-        img: img.src,
-        basePrice: img.basePrice,
+        img:img.src,
+        base:img.base,
         rarity,
-        price: img.basePrice * rarity.multiplier
+        price:img.base*rarity.m
     };
 }
 
-function createItem(item) {
-    const div = document.createElement("div");
-    div.className = `item ${item.rarity.name}`;
-    const img = document.createElement("img");
-    img.src = item.img;
-    div.appendChild(img);
-    return div;
+function createItem(item){
+    const d=document.createElement("div");
+    d.className=`item ${item.rarity.name}`;
+    const i=document.createElement("img");
+    i.src=item.img;
+    d.appendChild(i);
+    return d;
 }
 
-/* ===== OPEN CASE ===== */
-function openCase() {
-    if (!canClick) return;
+/* ===== OPEN ===== */
+openBtn.onclick=()=>{
+    if(!canClick) return;
+    canClick=false;
+    openBtn.disabled=true;
 
-    canClick = false;
-    openBtn.disabled = true;
-
-    clickSound.currentTime = 0;
     clickSound.play();
+    tape.style.transition="none";
+    tape.style.transform="translateX(0)";
+    tape.innerHTML="";
+    resultBox.innerHTML="";
 
-    tape.style.transition = "none";
-    tape.style.transform = "translateX(0)";
-    tape.innerHTML = "";
-    resultBox.innerHTML = "";
-
-    const items = [];
-    for (let i = 0; i < 40; i++) {
-        const item = randomItem();
-        items.push(item);
-        tape.appendChild(createItem(item));
+    const items=[];
+    for(let i=0;i<40;i++){
+        const it=randomItem();
+        items.push(it);
+        tape.appendChild(createItem(it));
     }
 
-    const winIndex = 30;
-    const winItem = items[winIndex];
+    const winIndex=30;
+    const winItem=items[winIndex];
 
-    setTimeout(() => {
-        tape.style.transition = "transform 6s cubic-bezier(.1,.7,.1,1)";
-        tape.style.transform = `translateX(-${winIndex * 134}px)`;
-    }, 50);
+    setTimeout(()=>{
+        tape.style.transition="transform 6s cubic-bezier(.1,.7,.1,1)";
+        tape.style.transform=`translateX(-${winIndex*134}px)`;
+    },50);
 
-    setTimeout(() => {
-        dropSound.currentTime = 0;
+    setTimeout(()=>{
         dropSound.play();
+        resultBox.appendChild(createItem(winItem));
+        const p=document.createElement("div");
+        p.className="price";
+        p.innerHTML=`${winItem.price}$<br><small>${winItem.base}$ × ${winItem.rarity.m}</small>`;
+        resultBox.appendChild(p);
 
-        const resItem = createItem(winItem);
-        resultBox.appendChild(resItem);
+        balance+=winItem.price;
+        balanceEl.textContent=balance;
+    },6200);
 
-        const priceDiv = document.createElement("div");
-        priceDiv.className = "price";
-        priceDiv.innerHTML = `
-            💰 ${winItem.price}$<br>
-            <small>${winItem.basePrice}$ × ${winItem.rarity.multiplier}</small>
-        `;
-        resultBox.appendChild(priceDiv);
-
-        totalBalance += winItem.price;
-        balanceEl.textContent = totalBalance;
-
-    }, 6200);
-
-    // ⏱ cooldown 1 sekunda + animacja
-    setTimeout(() => {
-        canClick = true;
-        openBtn.disabled = false;
-    }, 7000);
-}
-
-openBtn.addEventListener("click", openCase);
+    setTimeout(()=>{
+        canClick=true;
+        openBtn.disabled=false;
+    },7000);
+};
 </script>
 
 </body>
