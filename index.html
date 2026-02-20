@@ -5,40 +5,39 @@
 <title>Case Opener Game</title>
 
 <style>
-* { box-sizing:border-box; font-family:Arial,Helvetica,sans-serif; }
-
-body {
+*{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+body{
     margin:0;
-    background: radial-gradient(circle at top,#1b1b2b,#08080f);
+    background:radial-gradient(circle at top,#1b1b2b,#08080f);
     color:white;
     display:flex;
     flex-direction:column;
     align-items:center;
     padding:30px;
 }
+.hidden{display:none}
+h1{margin-bottom:10px}
 
-/* ===== COMMON ===== */
-.hidden { display:none; }
-button {
-    padding:14px 26px;
-    font-size:18px;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
-    background:linear-gradient(45deg,gold,orange);
-    font-weight:bold;
-}
-button:disabled { opacity:.5; cursor:not-allowed; }
-
-.balance {
+.balance{
     font-size:22px;
     color:gold;
     font-weight:bold;
     margin-bottom:20px;
 }
 
+button{
+    padding:12px 22px;
+    font-size:16px;
+    border:none;
+    border-radius:10px;
+    background:linear-gradient(45deg,gold,orange);
+    font-weight:bold;
+    cursor:pointer;
+}
+button:disabled{opacity:.5;cursor:not-allowed}
+
 /* ===== LOBBY ===== */
-#lobby {
+#lobby{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
     gap:20px;
@@ -46,19 +45,18 @@ button:disabled { opacity:.5; cursor:not-allowed; }
     max-width:900px;
 }
 
-.case-card {
+.case-card{
     background:#111;
     border-radius:14px;
     padding:20px;
     text-align:center;
     box-shadow:0 0 20px rgba(0,0,0,.6);
 }
-
-.case-card h3 { margin:10px 0; }
-.case-price { color:gold; margin-bottom:10px; }
+.case-card h3{margin:10px 0}
+.price{color:gold;margin-bottom:10px}
 
 /* ===== CASE VIEW ===== */
-.case {
+.case{
     position:relative;
     width:900px;
     height:180px;
@@ -68,18 +66,18 @@ button:disabled { opacity:.5; cursor:not-allowed; }
     box-shadow:0 0 40px rgba(0,0,0,.8);
     margin-bottom:20px;
 }
-
-.clamp {
+.clamp{
     position:absolute;
-    top:0; left:50%;
+    left:50%;
+    top:0;
     transform:translateX(-50%);
-    width:4px; height:100%;
+    width:4px;
+    height:100%;
     background:gold;
     box-shadow:0 0 15px gold;
     z-index:10;
 }
-
-.tape {
+.tape{
     display:flex;
     align-items:center;
     height:100%;
@@ -87,8 +85,7 @@ button:disabled { opacity:.5; cursor:not-allowed; }
     padding:0 400px;
     transition:transform 6s cubic-bezier(.1,.7,.1,1);
 }
-
-.item {
+.item{
     width:120px;
     height:120px;
     background:#000;
@@ -98,41 +95,36 @@ button:disabled { opacity:.5; cursor:not-allowed; }
     justify-content:center;
     flex-shrink:0;
 }
-.item img { width:80%; }
+.item img{width:80%}
 
 /* ===== RARITIES ===== */
-.common { border:3px solid #555; }
-.rare { border:3px solid #3fa9ff; box-shadow:0 0 10px #3fa9ff; }
-.epic { border:3px solid #b84dff; box-shadow:0 0 18px #b84dff; }
-.mythic { border:5px solid red; box-shadow:0 0 28px red; }
-.legendary {
+.common{border:3px solid #555}
+.rare{border:3px solid #3fa9ff;box-shadow:0 0 10px #3fa9ff}
+.epic{border:3px solid #b84dff;box-shadow:0 0 18px #b84dff}
+.mythic{border:5px solid red;box-shadow:0 0 28px red}
+.legendary{
     border:5px solid gold;
     animation:glow 1.2s infinite alternate;
 }
-@keyframes glow {
-    from{box-shadow:0 0 10px gold;}
-    to{box-shadow:0 0 35px gold;}
+@keyframes glow{
+    from{box-shadow:0 0 10px gold}
+    to{box-shadow:0 0 35px gold}
 }
 
-.result {
+.result{
     display:flex;
     gap:20px;
     align-items:center;
 }
-.result .item { width:160px; height:160px; }
-
-.price {
-    font-size:28px;
-    font-weight:bold;
-    color:gold;
-}
+.result .item{width:160px;height:160px}
+.result-price{font-size:26px;color:gold;font-weight:bold}
 </style>
 </head>
 
 <body>
 
 <h1>🎁 Case Opener</h1>
-<div class="balance">💰 Saldo: <span id="balance">100</span> $</div>
+<div class="balance">💰 Saldo: <span id="balance">0</span> $</div>
 
 <!-- ===== LOBBY ===== -->
 <div id="lobby"></div>
@@ -145,7 +137,7 @@ button:disabled { opacity:.5; cursor:not-allowed; }
     </div>
 
     <button id="openBtn">OTWÓRZ SKRZYNKĘ</button>
-    <button onclick="backToLobby()">⬅ POWRÓT</button>
+    <button onclick="backToLobby()">⬅ POWRÓT DO LOBBY</button>
 
     <div class="result" id="result"></div>
 </div>
@@ -154,28 +146,13 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 <audio id="dropSound" src="assets/sounds/drop.mp3"></audio>
 
 <script>
-/* ===== GLOBAL ===== */
-const images = Array.from({length:16},(_,i)=>({
+/* ===== DATA ===== */
+const images=Array.from({length:16},(_,i)=>({
     src:`assets/images/${i+1}.png`,
     base:i+1
 }));
 
-const balanceEl = document.getElementById("balance");
-const lobbyEl = document.getElementById("lobby");
-const gameEl = document.getElementById("game");
-const tape = document.getElementById("tape");
-const resultBox = document.getElementById("result");
-const openBtn = document.getElementById("openBtn");
-
-const clickSound = document.getElementById("clickSound");
-const dropSound = document.getElementById("dropSound");
-
-let balance = 100;
-let activeCase = null;
-let canClick = true;
-
-/* ===== CASE DEFINITIONS ===== */
-const cases = [
+const cases=[
 {
     name:"Normal Case",
     price:0,
@@ -191,10 +168,10 @@ const cases = [
     price:50,
     maxImg:5,
     chances:[
-        {name:'common',80,m:1},
-        {name:'rare',15,m:3},
-        {name:'epic',4,m:7},
-        {name:'mythic',1,m:10}
+        {name:'common',chance:80,m:1},
+        {name:'rare',chance:15,m:3},
+        {name:'epic',chance:4,m:7},
+        {name:'mythic',chance:1,m:10}
     ]
 },
 {
@@ -202,11 +179,11 @@ const cases = [
     price:3,
     maxImg:8,
     chances:[
-        {name:'common',70,m:1},
-        {name:'rare',15,m:3},
-        {name:'epic',10,m:7},
-        {name:'mythic',4,m:10},
-        {name:'legendary',1,m:30}
+        {name:'common',chance:70,m:1},
+        {name:'rare',chance:15,m:3},
+        {name:'epic',chance:10,m:7},
+        {name:'mythic',chance:4,m:10},
+        {name:'legendary',chance:1,m:30}
     ]
 },
 {
@@ -214,11 +191,11 @@ const cases = [
     price:12,
     maxImg:10,
     chances:[
-        {name:'common',50,m:1},
-        {name:'rare',30,m:3},
-        {name:'epic',15,m:7},
-        {name:'mythic',4,m:10},
-        {name:'legendary',1,m:30}
+        {name:'common',chance:50,m:1},
+        {name:'rare',chance:30,m:3},
+        {name:'epic',chance:15,m:7},
+        {name:'mythic',chance:4,m:10},
+        {name:'legendary',chance:1,m:30}
     ]
 },
 {
@@ -226,8 +203,8 @@ const cases = [
     price:15,
     maxImg:1,
     chances:[
-        {name:'common',50,m:1},
-        {name:'legendary',50,m:30}
+        {name:'common',chance:50,m:1},
+        {name:'legendary',chance:50,m:30}
     ]
 },
 {
@@ -235,52 +212,69 @@ const cases = [
     price:20,
     maxImg:16,
     chances:[
-        {name:'common',30,m:1},
-        {name:'rare',30,m:3},
-        {name:'epic',30,m:7},
-        {name:'mythic',9,m:10},
-        {name:'legendary',1,m:30}
+        {name:'common',chance:30,m:1},
+        {name:'rare',chance:30,m:3},
+        {name:'epic',chance:30,m:7},
+        {name:'mythic',chance:9,m:10},
+        {name:'legendary',chance:1,m:30}
     ]
 }
 ];
 
+let balance=0;
+let activeCase=null;
+let canClick=true;
+
+const lobby=document.getElementById("lobby");
+const game=document.getElementById("game");
+const balanceEl=document.getElementById("balance");
+const tape=document.getElementById("tape");
+const resultBox=document.getElementById("result");
+const openBtn=document.getElementById("openBtn");
+
+const clickSound=document.getElementById("clickSound");
+const dropSound=document.getElementById("dropSound");
+
 /* ===== LOBBY ===== */
 function renderLobby(){
-    lobbyEl.innerHTML="";
+    lobby.innerHTML="";
     cases.forEach((c,i)=>{
-        const div=document.createElement("div");
-        div.className="case-card";
-        div.innerHTML=`
+        const d=document.createElement("div");
+        d.className="case-card";
+        d.innerHTML=`
             <h3>${c.name}</h3>
-            <div class="case-price">${c.price}$</div>
+            <div class="price">${c.price}$</div>
             <button onclick="enterCase(${i})">WYBIERZ</button>
         `;
-        lobbyEl.appendChild(div);
+        lobby.appendChild(d);
     });
 }
 renderLobby();
 
-/* ===== ENTER CASE ===== */
-function enterCase(index){
-    const c=cases[index];
-    if(balance<c.price){ alert("Brak środków"); return; }
-    activeCase=c;
+/* ===== ENTER ===== */
+function enterCase(i){
+    const c=cases[i];
+    if(balance<c.price){
+        alert("Brak środków");
+        return;
+    }
     balance-=c.price;
     balanceEl.textContent=balance;
-    lobbyEl.classList.add("hidden");
-    gameEl.classList.remove("hidden");
+    activeCase=c;
+    lobby.classList.add("hidden");
+    game.classList.remove("hidden");
 }
 
 /* ===== BACK ===== */
 function backToLobby(){
-    gameEl.classList.add("hidden");
-    lobbyEl.classList.remove("hidden");
+    game.classList.add("hidden");
+    lobby.classList.remove("hidden");
     resultBox.innerHTML="";
 }
 
-/* ===== ROLL ===== */
+/* ===== RNG ===== */
 function rollRarity(){
-    let r=Math.random()*100, s=0;
+    let r=Math.random()*100,s=0;
     for(const c of activeCase.chances){
         s+=c.chance;
         if(r<=s) return c;
@@ -290,7 +284,7 @@ function rollRarity(){
 function randomItem(){
     const img=images[Math.floor(Math.random()*activeCase.maxImg)];
     const rarity=rollRarity();
-    return {
+    return{
         img:img.src,
         base:img.base,
         rarity,
@@ -313,7 +307,9 @@ openBtn.onclick=()=>{
     canClick=false;
     openBtn.disabled=true;
 
+    clickSound.currentTime=0;
     clickSound.play();
+
     tape.style.transition="none";
     tape.style.transform="translateX(0)";
     tape.innerHTML="";
@@ -335,10 +331,12 @@ openBtn.onclick=()=>{
     },50);
 
     setTimeout(()=>{
+        dropSound.currentTime=0;
         dropSound.play();
+
         resultBox.appendChild(createItem(winItem));
         const p=document.createElement("div");
-        p.className="price";
+        p.className="result-price";
         p.innerHTML=`${winItem.price}$<br><small>${winItem.base}$ × ${winItem.rarity.m}</small>`;
         resultBox.appendChild(p);
 
