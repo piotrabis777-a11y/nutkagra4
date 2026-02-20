@@ -224,6 +224,7 @@ const cases=[
 let balance=0;
 let activeCase=null;
 let canClick=true;
+let caseOpened=false;
 
 const lobby=document.getElementById("lobby");
 const game=document.getElementById("game");
@@ -244,7 +245,7 @@ function renderLobby(){
         d.innerHTML=`
             <h3>${c.name}</h3>
             <div class="price">${c.price}$</div>
-            <button onclick="enterCase(${i})">WYBIERZ</button>
+            <button onclick="enterCase(${i})">KUP I OTWÓRZ</button>
         `;
         lobby.appendChild(d);
     });
@@ -260,9 +261,15 @@ function enterCase(i){
     }
     balance-=c.price;
     balanceEl.textContent=balance;
+
     activeCase=c;
+    caseOpened=false;
+    openBtn.disabled=false;
+    openBtn.textContent="OTWÓRZ SKRZYNKĘ";
+
     lobby.classList.add("hidden");
     game.classList.remove("hidden");
+    resultBox.innerHTML="";
 }
 
 /* ===== BACK ===== */
@@ -303,9 +310,12 @@ function createItem(item){
 
 /* ===== OPEN ===== */
 openBtn.onclick=()=>{
-    if(!canClick) return;
+    if(!canClick || caseOpened) return;
+
+    caseOpened=true;
     canClick=false;
     openBtn.disabled=true;
+    openBtn.textContent="SKRZYNKA OTWARTA";
 
     clickSound.currentTime=0;
     clickSound.play();
@@ -344,10 +354,7 @@ openBtn.onclick=()=>{
         balanceEl.textContent=balance;
     },6200);
 
-    setTimeout(()=>{
-        canClick=true;
-        openBtn.disabled=false;
-    },7000);
+    setTimeout(()=>{ canClick=true; },7000);
 };
 </script>
 
