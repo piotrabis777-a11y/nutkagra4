@@ -2,142 +2,142 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>Case Opener Game</title>
+<title>Case Opener</title>
 
 <style>
 *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+
 body{
     margin:0;
-    background:radial-gradient(circle at top,#1b1b2b,#08080f);
-    color:white;
+    padding:30px;
+    background:radial-gradient(circle at top,#1c1f3a,#090a14);
+    color:#fff;
     display:flex;
     flex-direction:column;
     align-items:center;
-    padding:30px;
 }
-.hidden{display:none}
-h1{margin-bottom:10px}
 
-.balance{
-    font-size:22px;
-    color:gold;
-    font-weight:bold;
-    margin-bottom:20px;
-}
+/* ===== UI ===== */
+h1{margin-bottom:10px}
+.balance{font-size:22px;color:gold;margin-bottom:25px}
+.hidden{display:none}
 
 button{
-    padding:12px 22px;
-    font-size:16px;
+    padding:12px 26px;
     border:none;
-    border-radius:10px;
-    background:linear-gradient(45deg,gold,orange);
+    border-radius:12px;
+    background:linear-gradient(45deg,#ffcc00,#ff9500);
     font-weight:bold;
     cursor:pointer;
 }
-button:disabled{opacity:.5;cursor:not-allowed}
+button:disabled{opacity:.5}
 
 /* ===== LOBBY ===== */
 #lobby{
+    width:100%;
+    max-width:1100px;
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
     gap:20px;
-    width:100%;
-    max-width:900px;
 }
 
 .case-card{
-    background:#111;
-    border-radius:14px;
+    background:#0f1225;
     padding:20px;
+    border-radius:18px;
     text-align:center;
-    box-shadow:0 0 20px rgba(0,0,0,.6);
+    box-shadow:0 0 25px rgba(0,0,0,.5);
 }
-.case-card h3{margin:10px 0}
-.price{color:gold;margin-bottom:10px}
 
-/* ===== CASE VIEW ===== */
-.case{
-    position:relative;
-    width:900px;
-    height:180px;
+/* ===== CASE OPEN ===== */
+.case-window{
+    width:920px;
+    height:220px;
+    background:#0c0f22;
+    border-radius:20px;
     overflow:hidden;
-    border-radius:16px;
-    background:linear-gradient(180deg,#111,#1c1c1c);
-    box-shadow:0 0 40px rgba(0,0,0,.8);
+    position:relative;
     margin-bottom:20px;
 }
-.clamp{
+
+.pointer{
     position:absolute;
     left:50%;
     top:0;
-    transform:translateX(-50%);
     width:4px;
     height:100%;
-    background:gold;
-    box-shadow:0 0 15px gold;
-    z-index:10;
+    background:linear-gradient(#ffd700,#ff9c00);
+    transform:translateX(-50%);
+    z-index:5;
 }
+
 .tape{
+    height:100%;
     display:flex;
     align-items:center;
-    height:100%;
-    gap:14px;
-    padding:0 400px;
-    transition:transform 6s cubic-bezier(.1,.7,.1,1);
+    gap:16px;
+    padding:0 450px;
+    transition:transform 6s cubic-bezier(.15,.75,.15,1);
 }
+
+/* ===== ITEM ===== */
 .item{
-    width:120px;
-    height:120px;
-    background:#000;
-    border-radius:12px;
+    width:140px;
+    height:140px;
+    background:#05060f;
+    border-radius:18px;
     display:flex;
     align-items:center;
     justify-content:center;
     flex-shrink:0;
 }
-.item img{width:80%}
 
-/* ===== RARITIES ===== */
-.common{border:3px solid #555}
-.rare{border:3px solid #3fa9ff;box-shadow:0 0 10px #3fa9ff}
-.epic{border:3px solid #b84dff;box-shadow:0 0 18px #b84dff}
-.mythic{border:5px solid red;box-shadow:0 0 28px red}
+.item img{
+    width:85%;
+    height:85%;
+    object-fit:contain;
+}
+
+/* ===== RARITY ===== */
+.common{border:4px solid #666}
+.rare{border:4px solid #2aa7ff;box-shadow:0 0 18px #2aa7ff}
+.epic{border:5px solid #b14cff;box-shadow:0 0 24px #b14cff}
+.mythic{border:6px solid #ff3333;box-shadow:0 0 30px #ff3333}
 .legendary{
-    border:5px solid gold;
-    animation:glow 1.2s infinite alternate;
-}
-@keyframes glow{
-    from{box-shadow:0 0 10px gold}
-    to{box-shadow:0 0 35px gold}
+    border:6px solid gold;
+    box-shadow:0 0 30px gold,0 0 60px rgba(255,215,0,.6)
 }
 
+/* ===== RESULT ===== */
 .result{
     display:flex;
-    gap:20px;
     align-items:center;
+    gap:25px;
+    margin-top:20px;
 }
-.result .item{width:160px;height:160px}
-.result-price{font-size:26px;color:gold;font-weight:bold}
+
+.price{font-size:28px;color:gold}
+.controls{display:flex;gap:15px}
 </style>
 </head>
 
 <body>
 
 <h1>🎁 Case Opener</h1>
-<div class="balance">💰 Saldo: <span id="balance">0</span> $</div>
+<div class="balance">💰 Saldo: <span id="balance">0.00</span> $</div>
 
-<!-- ===== LOBBY ===== -->
 <div id="lobby"></div>
 
-<!-- ===== GAME ===== -->
 <div id="game" class="hidden">
-    <div class="case">
-        <div class="clamp"></div>
+    <div class="case-window">
+        <div class="pointer"></div>
         <div class="tape" id="tape"></div>
     </div>
 
-    <button id="openBtn">OTWÓRZ SKRZYNKĘ</button>
-    <button onclick="backToLobby()">⬅ POWRÓT DO LOBBY</button>
+    <div class="controls">
+        <button id="openBtn">OTWÓRZ</button>
+        <button onclick="back()">⬅ POWRÓT</button>
+    </div>
 
     <div class="result" id="result"></div>
 </div>
@@ -146,215 +146,183 @@ button:disabled{opacity:.5;cursor:not-allowed}
 <audio id="dropSound" src="assets/sounds/drop.mp3"></audio>
 
 <script>
-/* ===== DATA ===== */
-const images=Array.from({length:16},(_,i)=>({
+/* ===== IMAGES ===== */
+const images = Array.from({length:16},(_,i)=>({
     src:`assets/images/${i+1}.png`,
-    base:i+1
+    value:+(1 + i*0.1).toFixed(1)
 }));
 
-const cases=[
+/* ===== MULTIPLIERS ===== */
+const MULT = {
+    common:1,
+    rare:5,
+    epic:15,
+    mythic:60,
+    legendary:1000
+};
+
+/* ===== CASES ===== */
+const cases = [
 {
     name:"Normal Case",
     price:0,
-    maxImg:3,
     chances:[
-        {name:'common',chance:90,m:1},
-        {name:'rare',chance:9,m:3},
-        {name:'epic',chance:1,m:7}
+        {r:"common",p:99},
+        {r:"rare",p:0.9},
+        {r:"epic",p:0.1}
     ]
 },
 {
     name:"Bronze Case",
     price:1,
-    maxImg:5,
     chances:[
-        {name:'common',chance:80,m:1},
-        {name:'rare',chance:15,m:3},
-        {name:'epic',chance:4,m:7},
-        {name:'mythic',chance:1,m:10}
+        {r:"common",p:95},
+        {r:"rare",p:4},
+        {r:"epic",p:1}
     ]
 },
 {
     name:"Classic Case",
     price:3,
-    maxImg:8,
     chances:[
-        {name:'common',chance:70,m:1},
-        {name:'rare',chance:15,m:3},
-        {name:'epic',chance:10,m:7},
-        {name:'mythic',chance:4,m:10},
-        {name:'legendary',chance:1,m:30}
+        {r:"common",p:70},
+        {r:"rare",p:25},
+        {r:"epic",p:4},
+        {r:"mythic",p:1}
     ]
 },
 {
     name:"Silver Case",
     price:12,
-    maxImg:10,
     chances:[
-        {name:'common',chance:50,m:1},
-        {name:'rare',chance:30,m:3},
-        {name:'epic',chance:15,m:7},
-        {name:'mythic',chance:4,m:10},
-        {name:'legendary',chance:1,m:30}
-    ]
-},
-{
-    name:"Holy 50/50",
-    price:15,
-    maxImg:1,
-    chances:[
-        {name:'common',chance:50,m:1},
-        {name:'legendary',chance:50,m:30}
+        {r:"common",p:50},
+        {r:"rare",p:30},
+        {r:"epic",p:15},
+        {r:"mythic",p:5}
     ]
 },
 {
     name:"Golden Case",
     price:20,
-    maxImg:16,
     chances:[
-        {name:'common',chance:30,m:1},
-        {name:'rare',chance:30,m:3},
-        {name:'epic',chance:30,m:7},
-        {name:'mythic',chance:9,m:10},
-        {name:'legendary',chance:1,m:30}
+        {r:"common",p:30},
+        {r:"rare",p:30},
+        {r:"epic",p:30},
+        {r:"mythic",p:9.5},
+        {r:"legendary",p:0.5}
+    ]
+},
+{
+    name:"God Case",
+    price:100,
+    chances:[
+        {r:"epic",p:50},
+        {r:"mythic",p:45},
+        {r:"legendary",p:5}
     ]
 }
 ];
 
-let balance=0;
-let activeCase=null;
-let canClick=true;
-let caseOpened=false;
+/* ===== STATE ===== */
+let balance = 0;
+let active = null;
+let opened = false;
 
-const lobby=document.getElementById("lobby");
-const game=document.getElementById("game");
-const balanceEl=document.getElementById("balance");
-const tape=document.getElementById("tape");
-const resultBox=document.getElementById("result");
-const openBtn=document.getElementById("openBtn");
+const lobby = document.getElementById("lobby");
+const game = document.getElementById("game");
+const tape = document.getElementById("tape");
+const result = document.getElementById("result");
+const balanceEl = document.getElementById("balance");
+const openBtn = document.getElementById("openBtn");
 
-const clickSound=document.getElementById("clickSound");
-const dropSound=document.getElementById("dropSound");
+/* ===== LOBBY BUILD ===== */
+cases.forEach((c,i)=>{
+    lobby.innerHTML += `
+    <div class="case-card">
+        <h3>${c.name}</h3>
+        <p>${c.price}$</p>
+        <button onclick="enter(${i})">KUP</button>
+    </div>`;
+});
 
-/* ===== LOBBY ===== */
-function renderLobby(){
-    lobby.innerHTML="";
-    cases.forEach((c,i)=>{
-        const d=document.createElement("div");
-        d.className="case-card";
-        d.innerHTML=`
-            <h3>${c.name}</h3>
-            <div class="price">${c.price}$</div>
-            <button onclick="enterCase(${i})">KUP I OTWÓRZ</button>
-        `;
-        lobby.appendChild(d);
-    });
-}
-renderLobby();
+function enter(i){
+    if(balance < cases[i].price) return alert("Brak środków");
+    balance -= cases[i].price;
+    balanceEl.textContent = balance.toFixed(2);
 
-/* ===== ENTER ===== */
-function enterCase(i){
-    const c=cases[i];
-    if(balance<c.price){
-        alert("Brak środków");
-        return;
-    }
-    balance-=c.price;
-    balanceEl.textContent=balance;
-
-    activeCase=c;
-    caseOpened=false;
-    openBtn.disabled=false;
-    openBtn.textContent="OTWÓRZ SKRZYNKĘ";
+    active = cases[i];
+    opened = false;
+    openBtn.disabled = false;
 
     lobby.classList.add("hidden");
     game.classList.remove("hidden");
-    resultBox.innerHTML="";
+    result.innerHTML="";
 }
 
-/* ===== BACK ===== */
-function backToLobby(){
+function back(){
     game.classList.add("hidden");
     lobby.classList.remove("hidden");
-    resultBox.innerHTML="";
 }
 
 /* ===== RNG ===== */
 function rollRarity(){
-    let r=Math.random()*100,s=0;
-    for(const c of activeCase.chances){
-        s+=c.chance;
-        if(r<=s) return c;
+    let r = Math.random()*100, sum = 0;
+    for(const c of active.chances){
+        sum += c.p;
+        if(r <= sum) return c.r;
     }
 }
 
-function randomItem(){
-    const img=images[Math.floor(Math.random()*activeCase.maxImg)];
-    const rarity=rollRarity();
-    return{
-        img:img.src,
-        base:img.base,
-        rarity,
-        price:img.base*rarity.m
-    };
+function rollItem(){
+    const img = images[Math.floor(Math.random()*images.length)];
+    const rar = rollRarity();
+    return {img,rar};
 }
 
-function createItem(item){
-    const d=document.createElement("div");
-    d.className=`item ${item.rarity.name}`;
-    const i=document.createElement("img");
-    i.src=item.img;
-    d.appendChild(i);
-    return d;
-}
+/* ===== OPEN CASE ===== */
+openBtn.onclick = () => {
+    if(opened) return;
+    opened = true;
+    openBtn.disabled = true;
 
-/* ===== OPEN ===== */
-openBtn.onclick=()=>{
-    if(!canClick || caseOpened) return;
-
-    caseOpened=true;
-    canClick=false;
-    openBtn.disabled=true;
-    openBtn.textContent="SKRZYNKA OTWARTA";
-
-    clickSound.currentTime=0;
-    clickSound.play();
+    document.getElementById("clickSound").play();
 
     tape.style.transition="none";
     tape.style.transform="translateX(0)";
     tape.innerHTML="";
-    resultBox.innerHTML="";
 
     const items=[];
     for(let i=0;i<40;i++){
-        const it=randomItem();
+        const it=rollItem();
         items.push(it);
-        tape.appendChild(createItem(it));
+        const d=document.createElement("div");
+        d.className=`item ${it.rar}`;
+        d.innerHTML=`<img src="${it.img.src}">`;
+        tape.appendChild(d);
     }
 
-    const winIndex=30;
-    const winItem=items[winIndex];
+    const winIndex = 28;
+    const winItem = items[winIndex];
 
     setTimeout(()=>{
-        tape.style.transition="transform 6s cubic-bezier(.1,.7,.1,1)";
-        tape.style.transform=`translateX(-${winIndex*134}px)`;
+        tape.style.transition="transform 6s cubic-bezier(.15,.75,.15,1)";
+        tape.style.transform=`translateX(-${winIndex*156}px)`;
     },50);
 
     setTimeout(()=>{
-        dropSound.currentTime=0;
-        dropSound.play();
+        document.getElementById("dropSound").play();
+        const price = +(winItem.img.value * MULT[winItem.rar]).toFixed(2);
 
-        resultBox.appendChild(createItem(winItem));
-        const p=document.createElement("div");
-        p.className="result-price";
-        p.innerHTML=`${winItem.price}$<br><small>${winItem.base}$ × ${winItem.rarity.m}</small>`;
-        resultBox.appendChild(p);
+        result.innerHTML = `
+            <div class="item ${winItem.rar}">
+                <img src="${winItem.img.src}">
+            </div>
+            <div class="price">${price}$</div>
+        `;
 
-        balance+=winItem.price;
-        balanceEl.textContent=balance;
+        balance += price;
+        balanceEl.textContent = balance.toFixed(2);
     },6200);
-
-    setTimeout(()=>{ canClick=true; },7000);
 };
 </script>
 
